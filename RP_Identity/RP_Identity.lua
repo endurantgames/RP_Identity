@@ -53,21 +53,39 @@ local addOnName, ns = ...;
 local L = LibStub("AceLocale-3.0"):GetLocale(addOnName);
 local AceGUI = LibStub("AceGUI-3.0");
 
-local RP_Identity = LibStub("AceAddon-3.0"):NewAddon( addOnName
+local RP_Identity = LibStub("AceAddon-3.0"):NewAddon( addOnName, "AceConsole-3.0"
+                     
                       -- , "AceEvent-3.0", "AceLocale-3.0", "AceTimer-3.0"
                       );
+
+local maskIcon = "Interface\\ICONS\\Ability_Racial_Masquerade";
 
 RP_Identity.addOnName    = addOnName;
 RP_Identity.addOnTitle   = GetAddOnMetadata(addOnName, "Title");
 RP_Identity.addOnVersion = GetAddOnMetadata(addOnName, "Version");
+RP_Identity.addOnIcon    = maskIcon;
+RP_Identity.addOnColor   = { 51 / 255, 1, 85 / 255, 1 };
 
-function RP_Identity:OnInitialize()
-            
-      self.defaults =
+local myDataBroker = 
+        LibStub("LibDataBroker-1.1"):NewDataObject(
+            RP_Identity.addOnTitle,
+            { type    = "data source",
+              text    = RP_Identity.addOnTitle,
+              icon    = maskIcon,
+              OnClick = function() RP_Identity:ToggleEditorFrame() end,
+            }
+        );
+        
+local myDBicon = LibStub("LibDBIcon-1.0");
+
+local myDefaults =
       { profile =
             { config =
-                  { showIcon = true, },
-                  myMSP =
+                  { showIcon = true, 
+                    lockFrame = false,
+                    saveDimensions = false,
+                  },
+              myMSP =
                   { 
                         AE = "",
                         AG = "",
@@ -85,7 +103,7 @@ function RP_Identity:OnInitialize()
                         GU = UnitGUID("player"),
                         HB = "",
                         HI = "",
-                        IC = raceIcons[UnitSex("player")],
+                        IC = maskIcon,
                         HO = "",
                         MO = "",
                         NA = UnitName("player"),
@@ -96,22 +114,20 @@ function RP_Identity:OnInitialize()
                         PX = "",
                         RA = UnitRace("player"),
                         RC = UnitClass("player"),
-                        TR = IsTrialAccount and "1" or "0",
+                        TR = IsTrialAccount() and "1" or "0",
                         VA = RP_Identity.addOnTitle .. "/" .. RP_Identity.addOnVersion,
                         VP = "1",
                   },
             },
       };
 
-      self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", self.defaults);
+function RP_Identity:OnInitialize()
+            
+      self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", myDefaults);
 
-      -- :UpdateIdentity() reads the current config profile and sets msp.my accordingly
       function self:UpdateIdentity()
             for  field, value in pairs(self.db.profile.myMSP) do msp.my[field] = value; end;
-            if   self.Editor
-            then self.Editor:ClearPending();
-                 if self.Editor:IsShown() then self.Editor:ReloadTab(); end;
-            end;
+            if self.Editor:IsShown() then self.Editor:ReloadTab(); end;
             msp:Update();
       end;
 
@@ -124,7 +140,30 @@ function RP_Identity:OnInitialize()
            name           = RP_Identity.addOnTitle,
            order          = 1,
            args           =
-           { config       =
+           { versionInfo =
+             { type = "description",
+               name = L["Version Info"],
+               order = 1,
+             },
+             support =
+            { type = "group",
+              name = L["Support Header"],
+              order = 3,
+              args =
+              { supportHeader =
+                { type = "description",
+                  fontSize = "medium",
+                  name = "|cffffff00" .. L["Support Header"] .. "|r",
+                  order = 4,
+               },
+               supportInfo =
+                { type = "description",
+                  name = L["Support Info"],
+                  order = 5,
+                },
+              },
+            },
+             config       =
              { type       = "group",
                name       = L["Config Options"],
                order      = 1,
@@ -132,17 +171,41 @@ function RP_Identity:OnInitialize()
                args       =
                { showIcon =
                  { name   = L["Config Show Icon"],
+                   type   = "toggle",
                    order  = 1,
                    desc   = L["Config Show Icon Tooltip"],
                    get    = function() return self.db.profile.config.showIcon end,
-                   set    = function(info, value) RP_Identity.db.profile.config.showIcon = value; RP_Identity:ShowIcon(); end,
+                   set    = "ToggleMinimapIcon",
                    width  = "full",
                  },
                },
              },
-             profiles     = function() return LibStub("AceDBOptions-3.0"):GetOptionsTable(RP_Identity.db) end,
+             profiles     = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db),
+             credits =
+               { type = "group",
+                 name = L["Credits Header"],
+                 order = 10,
+                 args =
+                 {
+                   creditsHeader =
+                   { type = "description",
+                     name = "|cffffff00" .. L["Credits Header"] .. "|r",
+                     order = 2,
+                     fontSize = "medium",
+                   },
+                   creditsInfo =
+                   { type = "description",
+                     name = L["Credits Info"],
+                     order = 3,
+                   },
+                },
+              },
            },
          };
+      
+      myDBicon:Register(RP_Identity.addOnTitle, myDataBroker, RP_Identity.db.profile.config.ShowIcon);
+
+      self:RegisterChatCommand("rpidicon", "ToggleMinimapIcon");
 
       LibStub("AceConfig-3.0"):RegisterOptionsTable(
           self.addOnName,                  
@@ -155,45 +218,38 @@ function RP_Identity:OnInitialize()
       );
 end;
 
+-- data broker
+--
+function RP_Identity:ToggleMinimapIcon()
+      self.db.profile.config.showIcon = not self.db.profile.config.showIcon;
+      if self.db.profile.config.showIcon then myDBicon:Show() else myDBicon:Hide(); end;
+end;
+
+function RP_Identity:ToggleEditorFrame() 
+      if self.Editor
+      then if   self.Editor:IsShown() 
+           then self.Editor:Hide()
+           else self.Editor:ReloadTab(); self.Editor:Show()
+           end;
+      end;
+end;
+
+_G[addOnName] = RP_Identity;
+
 function RP_Identity:OnLoad() 
+      self.Editor.tabGroup:SelectTab(groupOrder[1]);
+end;
 
       -- db
 
-      function self:GetMSP(fieldName) return fieldName and self.db.profile.myMSP[fieldName] or nil end;
+      function RP_Identity:GetMSP(fieldName) return self.db.profile.myMSP[fieldName] or nil  end;
+      function RP_Identity:SetMSP(fieldName, value) self.db.profile.myMSP[fieldName] = value end;
       
-      function self:SetMSP(fieldName, value)
-            if fieldName 
-            then self.db.profile.myMSP[fieldName] = value;
-            end;
-      end;
-      
-      function self:ResetIdentity()
-        for field, value in pairs(self.defaults.profile.myMSP) do self:SetMSP(field, value); end;
+      function RP_Identity:ResetIdentity()
+        for field, value in pairs(myDefaults.profile.myMSP) do self:SetMSP(field, value); end;
         self:UpdateIdentity();
       end; 
 
-      -- data broker
-      --
-      local myDataBroker = 
-              LibStub("LibDataBroker-1.1"):NewDataObject(
-                  RP_Identity.addOnTitle,
-                  { type    = "data source",
-                    text    = RP_Identity.addOnTitle,
-                    icon    = "Interface\\ICONS\\Ability_Racial_Masquerade",
-                    OnClick = function() RP_Identity:ToggleEditorFrame() end,
-                  }
-              );
-      self.icon = LibStub("LibDBIcon-1.0");
-
-      self.icon:Register(self.addOnTitle, myDataBroker, self.db.profile.config.ShowIcon);
-
-      function self:ShowIcon() return self.db.config.showIcon and self.icon:Show() or self.icon:Hide() end; end;
-
-      function self:ToggleMinimapIcon()
-            self.db.profile.config.showIcon = not self.db.profile.config.showIcon;
-            self:ShowIcon();
-      end;
-       
       -- menu data
       --
       local menu =
@@ -221,7 +277,7 @@ function RP_Identity:OnLoad()
 
         PN =
             { [ "-1"                    ] = L["Custom Pronouns"   ],
-              [ ""                      ] = L["Undefined"         ],
+              [ ""                      ] = L["No Pronouns"       ],
               [ L["Pronouns She/Her"  ] ] = L["Pronouns She/Her"  ],
               [ L["Pronouns He/Him"   ] ] = L["Pronouns He/Him"   ],
               [ L["Pronouns They/Them"] ] = L["Pronouns They/Them"],
@@ -238,14 +294,15 @@ function RP_Identity:OnLoad()
 
         PX =
             { ["-1"] = L["Custom Honorific"],
-              [""  ] = L["None"            ],
+              [""  ] = L["No Honorific"    ],
             },
 
         PXOrder = { "", },
 
         IC =
-            { ["-1"] = L["Custom Icon"],
-              [""  ] = L["Undefined"  ],
+            { ["-1"    ] = L["Custom Icon"],
+              [""      ] = L["Undefined"  ],
+              [maskIcon] = L["rpIdentity Icon"],
             },
 
         ICOrder = { "" },
@@ -430,6 +487,8 @@ function RP_Identity:OnLoad()
         }, -- class
       };
       
+      -- iconDB
+      --
       local localizedRace,  playerRace  = UnitRace("player");
       local localizedClass, playerClass = UnitClass("player");
 
@@ -454,11 +513,14 @@ function RP_Identity:OnLoad()
       
       Editor:SetWidth( 600);
       Editor:SetHeight(400);
-      Editor.frame:SetMinResize(350, 300);
+      Editor.frame:SetMinResize(395, 320);
+      local maxW, maxH = UIParent:GetSize();
+      Editor.frame:SetMaxResize( maxW * 2/3, maxH * 2/3);
       Editor.content:ClearAllPoints();
       Editor.content:SetPoint("BOTTOMLEFT", Editor.frame, "BOTTOMLEFT",  20,  50);
-      Editor.content:SetPoint("TOPRIGHT",   Editor.frame, "TOPRIGHT",   -20, -50);
-      Editor:SetTitle(self.addOnTitle);
+      Editor.content:SetPoint("TOPRIGHT",   Editor.frame, "TOPRIGHT",   -20, -35);
+      Editor:SetTitle(RP_Identity.addOnTitle)
+      Editor.frame:SetClampedToScreen(true);
       Editor:SetLayout("Flow");
       Editor:Hide();
       Editor.pending = {};
@@ -466,16 +528,10 @@ function RP_Identity:OnLoad()
       local EditorFrameName = "RP_Identity_Editor_Frame";
       _G[EditorFrameName]   = Editor.frame;
       tinsert(UISpecialFrames, EditorFrameName);
-      self.Editor = Editor;
+      RP_Identity.Editor = Editor;
 
-      function self:ToggleEditorFrame() 
-            if   self.Editor:IsShown() 
-            then self.Editor:Hide()
-            else self.Editor:ReloadTab(); self.Editor:Show()
-            end;
-      end;
 
-      function self:EditIdentity() self.Editor:ReloadTab(); self.Editor:Show(); end;
+      function RP_Identity:EditIdentity() self.Editor:ReloadTab(); self.Editor:Show(); end;
 
       -- popups
       --
@@ -490,35 +546,38 @@ function RP_Identity:OnLoad()
         text         = L[POPUP_CLEAR];
         OnShow       = function(self) self:SetFrameStrata("FULLSCREEN_DIALOG"); end,
         OnClose      = function(self) self:SetFrameStrata("DIALOG"); end,
-        OnAccept     = function(self) RP_Identity:ResetIdentity(); Editor:ClearPending(); end,
+        OnAccept     = function(self) RP_Identity:ResetIdentity(); end,
       };
 
       -- editor config 
       --
+      local groupOrder = { "basics", "appearance", "bio", "status", };
+
       Editor.groups =
       { 
-        name = 
-            { fields = { "honorific", "name", "nickname" },
-              title  = L["Group Name"],
-            },
-
-        social =
-            { fields = { "title", "house", "motto", }, 
-              title  = L["Group Social"],
-            },
-
-        status =
-            { fields = { "rpStatus", "rpStyle", "currently", "oocInfo" },
-              title  = L["Group Status"],
-            },
-
         basics = 
-            { fields = { "race", "class", "pronouns", }, 
+            { fields = { "name", 
+                         "title", 
+                         "race", 
+                         "class", 
+                         "honorific", "pronouns", 
+                         "nickname", 
+                         "house",
+                         "motto",
+                       },
+
               title  = L["Group Basics"],
             },
 
+        status =
+            { fields = { "rpStyle", "rpStatus", "currently", "oocInfo" },
+              title  = L["Group Status"],
+            },
+
         appearance =
-            { fields = { "height", "weight", "eyes", "desc", },
+            { fields = { "eyes", 
+                         "height", "weight", 
+                         "desc", },
               title  = L["Group Appearance"],
             },
 
@@ -528,8 +587,6 @@ function RP_Identity:OnLoad()
             },
       };
       
-      local groupOrder = { "name", "basics", "social", "status", "bio", "appearance" };
-
       -- initialization
       --
       local tabList = {};
@@ -543,27 +600,61 @@ function RP_Identity:OnLoad()
       function Editor:GetMSP(msp) return self.pending[msp] and self.pending[msp] or RP_Identity:GetMSP(msp); end; 
       function Editor:SetMSP(msp, value) 
             self.pending[msp] = value; 
-            self:SetTitle(RP_Identity.addOnTitle .. L["(not saved)"]);
-      end;
-      function Editor:ClearPending() self.pending = {} self:SetTitle(RP_Identity.addOnTitle); end;
-      function Editor:ApplyPending() 
-            for field, value in pairs(self.pending) do RP_Identity:SetMSP(field, value); end;
-            self:ClearPending();
+            self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile() .. L["(not saved)"]);
       end;
 
+      function Editor:ClearPending() 
+        self.pending = {} 
+         self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile())
+      end;
+
+      function Editor:ApplyPending() 
+            for field, value in pairs(self.pending) 
+            do RP_Identity:SetMSP(field, value); 
+            end;
+            self:ClearPending();
+            RP_Identity:UpdateIdentity();
+      end;
       
+      local function fixEditBox(widget)
+        local sides = { "Left", "Right", "Middle" };
+        local function hide() 
+          if widget.editbox:HasFocus() then return end;
+          for _, side in ipairs(sides) 
+          do widget.editbox[side]:SetVertexColor(1, 1, 1, 0); 
+          end; 
+        end;
+        local function show() 
+          for _, side in ipairs(sides) 
+          do widget.editbox[side]:SetVertexColor(unpack(RP_Identity.addOnColor)) 
+          end;  
+        end;
+        local function hover() 
+          if widget.editbox:HasFocus() then return end;
+          for _, side in ipairs(sides) 
+          do widget.editbox[side]:SetVertexColor(1, 1, 0, 1); 
+          end 
+        end;
+        hide();
+        widget.editbox:SetScript("OnEditFocusGained", show)
+        widget.editbox:SetScript("OnEditFocusLost", hide)
+        widget:SetCallback("OnEnter", hover);
+        widget:SetCallback("OnLeave", hide);
+      end;
+          
       local function makeLabel(msp, width)
             local w = AceGUI:Create("Label");
             w.MSP = msp;
             w:SetText(L["Label " .. msp] .. "   ");
+            w:SetColor(1, 1, 0, 1);
             w:SetRelativeWidth(width)
-            w:SetJustifyH("RIGHT");
             return w;
       end;
       
       local function makeEditBox(msp, width, labelWidth)
             local label = makeLabel(msp, labelWidth);
             local main = AceGUI:Create("EditBox");
+            fixEditBox(main);
             main:SetRelativeWidth(width);
             main.MSP = msp;
             main:SetText(Editor:GetMSP(msp));
@@ -571,20 +662,18 @@ function RP_Identity:OnLoad()
             return { label, main };
       end;
       
-      local function makeDropdown(msp, width, labelW, customW, customLW)
-            local label       = makeLabel(msp,                labelW);
-            local customLabel = makeLabel(msp .. "-custom", customLW);
+      local function makeDropdown(msp, width, labelW, customW)
+            local label = makeLabel(msp, labelW > 0 and labelW or 0.1);
       
             local custom = AceGUI:Create("EditBox");
-            custom:SetRelativeWidth(customW)
+            fixEditBox(custom);
+
+            custom:SetRelativeWidth(customW > 0 and customW or 0.1)
             custom.MSP = msp;
-            custom:SetCallback("OnEnterPressed", 
-                  function(self, event, text) 
-                        Editor:SetMSP(self.MSP, text) 
-                  end);
+            custom:SetCallback("OnEnterPressed", function(self, event, text) Editor:SetMSP(self.MSP, text) end);
             
             local main = AceGUI:Create("Dropdown");
-            main:SetRelativeWidth(width);
+            main:SetRelativeWidth(width > 0 and width or 0.1);
             main.MSP = msp;
       
             main.custom = custom;
@@ -593,9 +682,14 @@ function RP_Identity:OnLoad()
       
             local initialValue = Editor:GetMSP(msp);
       
-            if myMenu[initialValue]
-            then main:SetValue(initialValue); custom:SetDisabled(true);
-            else main:SetValue("-1"); custom:SetDisabled(false); custom:SetValue(initialValue);
+            if   myMenu[initialValue]
+            then main:SetValue(initialValue);
+                 main:SetText(myMenu[initialValue]);
+                 custom:SetDisabled(true); 
+            else main:SetValue("-1"); 
+                 main:SetText(myMenu["-1"]);
+                 custom:SetDisabled(false); 
+                 custom:SetText(initialValue);
             end;
       
             main:SetList(myMenu, menu[msp .. "Order"]);
@@ -603,19 +697,27 @@ function RP_Identity:OnLoad()
             main:SetCallback("OnValueChanged", 
                         function(self, event, key)
                                  if key == "-1"
-                                 then self.custom:SetDisabled("false");
-                                                Editor:SetMSP(self.MSP, self.custom:GetValue());
-                                 else self.custom:SetDisabled("true");
-                                                Editor:SetMSP(self.MSP, key);
+                                 then custom:SetDisabled(false);
+                                      custom:SetFocus();
+                                      custom:SetText("");
+                                 else custom:SetDisabled(true);
+                                      Editor:SetMSP(self.MSP, key);
                                  end;
                         end);
-            return { label, main, customLabel, custom };
+            local widgets = {}
+            if labelW  > 0 then table.insert(widgets, label) end;
+            if width   > 0 then table.insert(widgets, main) end;
+            if customW > 0 then table.insert(widgets, custom) end;
+            return widgets;
       end;
       
-      local function makeMultiLine(msp, lines)
+      local function makeMultiLine(msp, lines, width)
             local main = AceGUI:Create("MultiLineEditBox");
             main:SetLabel(L["Label " .. msp]);
-            main:SetFullWidth(true);
+            main:SetNumLines(lines or 3);
+            if not width then main:SetFullWidth(true);
+                         else main:SetRelativeWidth(width)
+            end;
             main.MSP = msp;
             main:SetText( Editor:GetMSP(msp) );
             main:SetCallback("OnEnterPressed", function(self, event, text) Editor:SetMSP(self.MSP, text); end);
@@ -625,7 +727,12 @@ function RP_Identity:OnLoad()
       local function makeColorfulEditBox(msp, width, labelWidth)
             local ADDFMT = "|cff%02x%02x%02x%s|r";
             local EXTRFMT = "^|cff(%x%x)(%x%x)(%x%x)(.+)|r$";
-            local function addColor(r, g, b, name) return string.format(COLORFMT, r * 255, g * 255, b * 255, name) end;
+
+            local function addColor(r, g, b, name) 
+              if r then return string.format(ADDFMT, r * 255, g * 255, b  * 255, name) 
+              else return name;
+              end;
+            end;
       
             local function extractColor(str)
                   local r, g, b, name = str:match(EXTRFMT)
@@ -638,6 +745,7 @@ function RP_Identity:OnLoad()
             local label = makeLabel(msp, labelWidth);
       
             local main = AceGUI:Create("EditBox");
+            fixEditBox(main);
             main:SetRelativeWidth(width); 
             main.MSP = msp;
       
@@ -649,15 +757,17 @@ function RP_Identity:OnLoad()
       
             picker:SetCallback("OnValueConfirmed",
                   function(self, event, r, g, b, a)
+                        print("r, g, b", r, g, b);
                         Editor:SetMSP(self.MSP, addColor(r, g, b, self.main:GetText() ));
                         self.r, self.g, self.b = r, g, b;
                   end);
                         
             main.picker = picker;
       
-            local initialValue = Editor:GetMSP(self.MSP);
+            local initialValue = Editor:GetMSP(msp);
             local r, g, b, name = extractColor(initialValue);
-            picker:SetColor(r or 1, g or 1, b or 1, 1);
+            r, g, b = r or 1, g or 1, b or 1;
+            picker:SetColor(r, g, b, 1);
             picker.r, picker.g, picker.b = r, g, b;
             main:SetText(name);
       
@@ -671,31 +781,40 @@ function RP_Identity:OnLoad()
       
       local frameConstructor = 
       { 
-            --                             makeEditBox(msp, width, labelWidth)
-            age        = function() return makeEditBox("AG", 0.5, 0.1             ) end,
-            birthPlace = function() return makeEditBox("HB", 0.5, 0.25            ) end,
-            class      = function() return makeEditBox("RC", 0.5, 0.25            ) end,
-            height     = function() return makeEditBox("AH", 0.5, 0.1             ) end,
-            home       = function() return makeEditBox("HH", 0.5, 0.1             ) end,
-            house      = function() return makeEditBox("NH", 0.5, 0.1             ) end,
-            motto      = function() return makeEditBox("MO", 0.5, 0.1             ) end,
-            title      = function() return makeEditBox("NT", 0.5, 0.1             ) end,
-            nickname   = function() return makeEditBox("NI", 0.5, 0.1             ) end,
-            race       = function() return makeEditBox("RA", 0.5, 0.1             ) end,
-            weight     = function() return makeEditBox("AW", 0.5, 0.1             ) end,
-            --                             makeMultiLine(msp, lines);
-            currently  = function() return makeMultiLine("CU", 3                  ) end,
-            desc       = function() return makeMultiLine("DE", 3                  ) end,
-            history    = function() return makeMultiLine("HI", 3                  ) end,
-            oocInfo    = function() return makeMultiLine("CO", 3                  ) end,
-            --                             makeColorfulEditBox(msp, width, labelWidth)
-            eyes       = function() return makeColorfulEditBox("AE", 0.5, 0.1     ) end,
-            name       = function() return makeColorfulEditBox("NA", 0.7, 0.1     ) end,
-            --                             makeDropdown(msp, width, labelW, customW, customLW);
-            pronouns   = function() return makeDropdown("PN", 0.5, 0.1, 0.5, 0.2  ) end,
-            honorific  = function() return makeDropdown("PX", 0.5, 0.1, 0.5, 0.2  ) end,
-            rpStatus   = function() return makeDropdown("FC", 0.5, 0.2, 0.5, 0.2  ) end,
-            rpStyle    = function() return makeDropdown("FR", 0.5, 0.2, 0.5, 0.2  ) end,
+            --  makeEditBox(msp, width, labelWidth)
+            --  makeDropdown(msp, width, labelW, customW)
+            --  makeColorfulEditBox(msp, width, labelWidth)
+            --  makeMultiLine(msp, lines)
+            name       = function() return makeColorfulEditBox("NA", 0.75, 0.15     ) end,
+
+            race       = function() return makeEditBox("RA", 0.85, 0.15            ) end,
+            class      = function() return makeEditBox("RC", 0.85, 0.15            ) end,
+
+            title      = function() return makeEditBox("NT", 0.85, 0.15            ) end,
+            house      = function() return makeEditBox("NH", 0.35, 0.15             ) end,
+
+            nickname   = function() return makeEditBox("NI", 0.35, 0.15             ) end,
+
+            pronouns   = function() return makeDropdown("PN", 0.25, 0, 0.25       ) end,
+            honorific  = function() return makeDropdown("PX", 0.25, 0, 0.20       ) end,
+
+            motto      = function() return makeEditBox("MO", 0.85, 0.15             ) end,
+
+
+            rpStatus   = function() return makeDropdown("FC", 0.25, 0, 0.25       ) end,
+            rpStyle    = function() return makeDropdown("FR", 0.25, 0, 0.25       ) end,
+            currently  = function() return makeMultiLine("CU", 12, 0.5             ) end,
+            oocInfo    = function() return makeMultiLine("CO", 12, 0.5             ) end,
+
+            eyes       = function() return makeColorfulEditBox("AE", 0.75, 0.15     ) end,
+            height     = function() return makeEditBox("AH", 0.75, 0.15             ) end,
+            weight     = function() return makeEditBox("AW", 0.75, 0.15            ) end,
+            desc       = function() return makeMultiLine("DE", 12                 ) end,
+
+            age        = function() return makeEditBox("AG", 0.85, 0.15             ) end,
+            birthPlace = function() return makeEditBox("HB", 0.85, 0.15            ) end,
+            home       = function() return makeEditBox("HH", 0.85, 0.15             ) end,
+            history    = function() return makeMultiLine("HI", 12                  ) end,
       
       };
 
@@ -707,7 +826,7 @@ function RP_Identity:OnLoad()
       Editor.tabGroup.Editor = Editor;
       Editor:AddChild(Editor.tabGroup);
 
-      function tabGroup:LoadTab(tab)
+      function Editor.tabGroup:LoadTab(tab)
         self:ReleaseChildren();
 
         self.scrollContainer = AceGUI:Create("SimpleGroup");
@@ -740,54 +859,63 @@ function RP_Identity:OnLoad()
           end);
 
       function Editor:ReloadTab()
-        self:ApplyPending();
         self.tabGroup:LoadTab(self.currentGroup or groupOrder[1]);
+        self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile() );
       end;
 
-      Editor.tabGroup:SelectTab(groupOrder[1]);
-      
+local function openOptions()
+    InterfaceOptionsFrame:Show();
+    InterfaceOptionsFrame_OpenToCategory(RP_Identity.addOnTitle)
+    RP_Identity.Editor:Hide();
+end;
       -- editor buttons
       --
-      local saveButton   = AceGUI:Create("Button");
-      local clearButton  = AceGUI:Create("Button");
-      local cancelButton = AceGUI:Create("Button");
-      
-      Editor:AddChild(saveButton  );
-      Editor:AddChild(clearButton );
-      Editor:AddChild(cancelButton);
-      
-      saveButton:ClearAllPoints();
-      clearButton:ClearAllPoints();
-      cancelButton:ClearAllPoints();
-      
-      saveButton:SetWidth(  100);
-      clearButton:SetWidth( 100);
-      cancelButton:SetWidth(100);
-      
-      saveButton:SetPoint(  "BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT", -220, 20);
-      clearButton:SetPoint( "BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT", -120, 20);
-      cancelButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT",  -20, 20);
-      
-      saveButton:SetCallback("OnClick", 
-        function(self, event, button) 
-          Editor:ApplyPending(); 
-          Editor:Hide(); 
-        end);
+      local buttonSize = 85;
 
-      clearButton:SetCallback( "OnClick",
-        function(self, event, button) 
-          StaticPopup_Show(POPUP); 
-        end);
+      local resetButton  = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
+      resetButton:SetText(L["Button Clear"]);
+      resetButton:ClearAllPoints();
+      resetButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT", -20 - buttonSize * 1 - 5 * 1, 20);
+      resetButton:SetWidth(buttonSize);
+      resetButton:SetScript("OnClick", function(self) StaticPopup_Show(POPUP_CLEAR); end);
 
-      cancelButton:SetCallback("OnClick", 
-        function(self, event, button) 
-          Editor:ClearPending(); 
-          Editor:Hide() 
-        end);
-      
-      saveButton:SetText(   L["Button Save"  ]);
-      clearButton:SetText(  L["Button Clear" ]);
+      local cancelButton  = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
       cancelButton:SetText( L["Button Cancel"]);
+      cancelButton:ClearAllPoints();
+      cancelButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT",  -20, 20);
+      cancelButton:SetWidth(buttonSize);
+      cancelButton:SetScript("OnClick", function(self) Editor:ClearPending(); Editor:Hide() end);
 
+      local saveButton  = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
+      saveButton:SetText(L["Button Save"]);
+      saveButton:ClearAllPoints();
+      saveButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT", -20 - buttonSize * 2 - 5 * 2, 20);
+      saveButton:SetWidth(buttonSize);
+      saveButton:SetScript("OnClick", function(self) Editor:ApplyPending(); Editor:Hide(); end);
+
+      local configButton = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
+      configButton:SetText(L["Button Config"]);
+      configButton:ClearAllPoints();
+      configButton:SetPoint("BOTTOMLEFT", Editor.frame, "BOTTOMLEFT", 20, 20);
+      configButton:SetWidth(buttonSize);
+      configButton:SetScript("OnClick", openOptions);
+
+local function notify(...)
+  print("[" .. RP_Identity.addOnTitle .. "]", ...)
 end;
 
+_G["SLASH_RP_IDENTITY1"] = "/rpid";
+SlashCmdList["RP_IDENTITY"] = 
+  function(a)
+    if a == "" or a:match("help")
+    then notify("Hey, you found the help command.");
+    elseif a:match("option") or a:match("config") or a:match("setting") or a:match("profile")
+    then openOptions();
+    elseif a:match("toggle")
+    then RP_Identity:ToggleEditorFrame();
+    elseif a:match("open")
+    then RP_Identity.Editor:ReloadTab();
+         RP_Identity.Editor.frame:Show();
+    end;
+  end;
+    
