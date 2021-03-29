@@ -8,7 +8,7 @@ local addOnName, ns = ...
 local RPTAGS        = RPTAGS;
 local Module        = RPTAGS.queue:GetModule(addOnName);
 
-Module:WaitUntil("DATA_CONST"icon,
+Module:WaitUntil("DATA_CONST",
 function(self, event, ...)
 
   local UNSUP = RPTAGS.CONST.UNSUP;
@@ -57,7 +57,6 @@ function(self, event, ...)
   UNSUP["rp:relationcolor"      ] = "unsupcolor";
   UNSUP["rp:relationicon"       ] = "unsupicon";
   UNSUP["rp:religion"           ] = "unsup";
-  UNSUP["rp:religion"           ] = "unsup";
   UNSUP["rp:rookie"             ] = "unsup";
   UNSUP["rp:rookie-icon"        ] = "unsupicon";
   UNSUP["rp:rstatus"            ] = "unsup";
@@ -89,21 +88,5 @@ function(self, event, ...)
   UNSUP["rp:xp"                 ] = "unsup";
   UNSUP["rp:xp-icon"            ] = "unsupicon";
 
---[[
-    RPTAGS.utils.get.text.title        = unSupYet;
-    RPTAGS.utils.get.text.xp           = unSup;        -- research needed
-    RPTAGS.utils.get.color.guildstatus = unSupColor;  
-    RPTAGS.utils.get.text.note         = unSup;        -- rpid doesn't support trp3's notes
-    RPTAGS.utils.get.icon.glances      = unSup;        -- rpid doesn't support glances
-
-    RPTAGS.utils.get.text.relation     = unSup;        -- rpid doesn't support trp3's "relations"
-    RPTAGS.utils.get.text.relwho       = unSup;
-    RPTAGS.utils.get.icon.relation     = unSupIcon;    
-    RPTAGS.utils.get.color.relation    = unSupColor;
---]]
-
-  end
-);
-
-
 end);
+

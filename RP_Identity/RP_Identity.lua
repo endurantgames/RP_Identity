@@ -50,6 +50,9 @@
  
 local addOnName, ns = ...;
 
+local ALL_FIELDS = { "AE", "AG", "AH", "AW", "CO", "CU", "DE", "FC", "FR", "HB", "HH", "MO", "NA", "NH", "NI", "NT", "PN", "PX", "RA", "RC", "TR", "VA", "VP" };
+
+msp:AddFieldsToTooltip("CO", "RC", "IC", "PN")
 local L = LibStub("AceLocale-3.0"):GetLocale(addOnName);
 local AceGUI = LibStub("AceGUI-3.0");
 
@@ -94,6 +97,8 @@ local myDefaults =
                     targetRequest = true,
                     focusRequest = true,
                     editorTooltips = true,
+                    autoSave = false,
+                    tooltipsFadeOut = true,
                   },
               myMSP =
                   { 
@@ -106,11 +111,6 @@ local myDefaults =
                         DE = "",
                         FC = "0",
                         FR = "0",
-                        GC = UnitClass("player"),
-                        GF = UnitFactionGroup("player") .. "",
-                        GR = UnitRace("player"),
-                        GS = UnitSex("player") .. "",
-                        GU = UnitGUID("player"),
                         HB = "",
                         HI = "",
                         IC = maskIcon,
@@ -124,12 +124,25 @@ local myDefaults =
                         PX = "",
                         RA = UnitRace("player"),
                         RC = UnitClass("player"),
-                        TR = IsTrialAccount() and "1" or "0",
                         VA = RP_Identity.addOnTitle .. "/" .. RP_Identity.addOnVersion,
                         VP = "1",
+                        -- TR = IsTrialAccount() and "1" or "0",
+                        -- GC = UnitClass("player"),
+                        -- GF = UnitFactionGroup("player") .. "",
+                        -- GR = UnitRace("player"),
+                        -- GS = UnitSex("player") .. "",
+                        -- GU = UnitGUID("player"),
                   },
             },
       };
+
+local function setAutoSave(info, value)
+  if value then RP_Identity.Editor:ApplyPending(); end;
+  RP_Identity.db.profile.config.autoSave = value;
+  RP_Identity.saveButton:SetShown(not value);
+  RP_Identity.cancelButton:SetShown(not value);
+  RP_Identity.closeButton:SetShown(value);
+end;
 
 function RP_Identity:OnInitialize()
             
@@ -173,7 +186,7 @@ function RP_Identity:OnInitialize()
                 },
               },
             },
-             config       =
+             configOptions       =
              { type       = "group",
                name       = L["Config Options"],
                order      = 1,
@@ -259,6 +272,22 @@ function RP_Identity:OnInitialize()
                    set = function(info, value) self.db.profile.config.raidRequest = value end,
                    width = 1.5,
                  },
+                 autoSave =
+                 { name = L["Config Auto Save"],
+                   type = "toggle",
+                   order = 10,
+                   desc = L["Config Auto Save"],
+                   get = function() return self.db.profile.config.autoSave end,
+                   set = setAutoSave,
+                 },
+                 tooltipsFadeOut =
+                 { name = L["Config Tooltips Fade Out"],
+                   type = "toggle",
+                   order = 11,
+                   desc = L["Config Tooltips Fade Out Tooltip"],
+                   get = function() return self.db.profile.config.tooltipsFadeOut end,
+                   set = function(info, value) self.db.profile.config.tooltipsFadeOut = value end,
+                 },
                },
              },
              profiles     = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db),
@@ -329,7 +358,7 @@ function RP_Identity.mspRequestNotifier(playerName)
   if RP_Identity.db.profile.config.notifyProfile and playerName ~= playerRequested
   then notify(string.format(L["Sent Profile To %s"], playerName));
   end;
-  if RP_Identity.db.profile.config.autoRequest then msp:Request(playerName) end;
+  if RP_Identity.db.profile.config.autoRequest then msp:Request(playerName, ALL_FIELDS) end;
 end;
 
 tinsert(msp.callback.received, RP_Identity.mspRequestNotifier);
@@ -338,14 +367,14 @@ function RP_Identity:MouseoverRequestProfile(event)
   if self.db.profile.config.mouseoverRequest and UnitIsPlayer("mouseover")
   then local name, server = UnitFullName("mouseover");
        local playerName = name .. "-" .. (server or GetRealmName());
-       msp:Request(playerName);
+       msp:Request(playerName, ALL_FIELDS);
   end;
 end;
 
 RP_Identity:RegisterEvent("UPDATE_MOUSEOVER_UNIT", "MouseoverRequestProfile");
 
 function RP_Identity:HearSomeoneRequestProfile(event, text, playerName, ...)
-  if self.db.profile.config.hearSomeone then msp:Request(playerName); end;
+  if self.db.profile.config.hearSomeone then msp:Request(playerName, ALL_FIELDS); end;
 end;
 
 RP_Identity:RegisterEvent("CHAT_MSG_EMOTE",      "HearSomeoneRequestProfile");
@@ -358,7 +387,7 @@ function RP_Identity:TargetRequestProfile(event)
   if self.db.profile.config.targetRequest and UnitIsPlayer("target")
   then local name, server = UnitFullName("target");
        local playerName = name .. "-" .. (server or GetRealmName());
-       msp:Request(playerName);
+       msp:Request(playerName, ALL_FIELDS);
   end;
 end;
 
@@ -368,7 +397,7 @@ function RP_Identity:FocusRequestProfile(event)
   if self.db.profile.config.focusRequest and UnitIsPlayer("focus")
   then local name, server = UnitFullName("focus")
        local playerName = name .. "-" .. (server or GetRealmName())
-       msp:Request(playerName);
+       msp:Request(playerName, ALL_FIELDS);
   end;
 end;
 
@@ -378,19 +407,19 @@ function RP_Identity:GroupRequestProfile(event)
   if self.db.profile.config.raidRequest and IsInRaid()
   then for i = 1, GetNumGroupMembers()
        do  local playerName, _ = GetRaidRosterInfo(i);
-           msp:Request(playerName)
+           msp:Request(playerName, ALL_FIELDS)
        end;
   elseif self.db.profile.config.partyRequest and IsInGroup()
   then   if IsInGroup(LE_PARTY_CATEGORY_INSTANCE)
          then for i = 1, 4
               do if UnitInParty("party" .. i)
-                 then msp:Request("party" .. i)
+                 then msp:Request("party" .. i, ALL_FIELDS)
                  end;
               end;
          end;
          if IsInGroup(LE_PARTY_CATEGORY_HOME)
          then for _, playerName in GetHomePartyInfo()
-              do msp:Request(playerName)
+              do msp:Request(playerName, ALL_FIELDS)
               end;
          end;
   end;
@@ -416,7 +445,7 @@ end;
 local menu =
 { FR =
       { ["-1"] = L["Custom Style"],
-        ["0" ] = L["Undefined"   ],
+        ["0" ] = L["Style Undefined"   ],
         ["1" ] = L["Normal"      ],
         ["2" ] = L["Casual"      ],
         ["3" ] = L["Full-Time"   ],
@@ -427,7 +456,7 @@ local menu =
 
   FC =
       { ["-1"] = L["Custom Status"      ],
-        ["0" ] = L["Undefined"          ],
+        ["0" ] = L["Status Undefined"          ],
         ["1" ] = L["Out of Character"   ],
         ["2" ] = L["In Character"       ],
         ["3" ] = L["Looking for Contact"],
@@ -441,16 +470,12 @@ local menu =
         [ ""                      ] = L["No Pronouns"       ],
         [ L["Pronouns She/Her"  ] ] = L["Pronouns She/Her"  ],
         [ L["Pronouns He/Him"   ] ] = L["Pronouns He/Him"   ],
-        [ L["Pronouns They/Them"] ] = L["Pronouns They/Them"],
-        [ L["Pronouns It/Its"   ] ] = L["Pronouns It/Its"   ],
   },
 
   PNOrder = 
       { "", 
         L["Pronouns She/Her"], 
         L["Pronouns He/Him"], 
-        L["Pronouns They/Them"], 
-        L["Pronouns It/Its"] 
   },
 
   PX =
@@ -765,8 +790,11 @@ end;
 --
 function Editor:GetMSP(msp) return self.pending[msp] and self.pending[msp] or RP_Identity:GetMSP(msp); end; 
 function Editor:SetMSP(msp, value) 
-      self.pending[msp] = value; 
-      self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile() .. L["(not saved)"]);
+      if RP_Identity.db.profile.config.autoSave
+      then RP_Identity:SetMSP(msp, value);
+      else self.pending[msp] = value; 
+           self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile() .. L["(not saved)"]);
+      end;
 end;
 
 function Editor:ClearPending() 
@@ -796,7 +824,8 @@ local function showTooltip(self, event, msp)
 end;
   
 local function hideTooltip(self, event)
-  GameTooltip:FadeOut();
+  if RP_Identity.db.profile.config.tooltipsFadeOut then GameTooltip:FadeOut()
+  else GameTooltip:Hide(); end;
   ResetCursor();
 end;
 
@@ -947,17 +976,17 @@ local function makeIcon(msp, iconSize, iconWidth, dropdownWidth, customWidth)
 end;
 
 local function makeColorfulEditBox(msp, width, labelWidth)
-      local ADDFMT = "|cff%02x%02x%02x%s|r";
-      local EXTRFMT = "^|cff(%x%x)(%x%x)(%x%x)(.+)|r$";
+      local ADD_FMT = "|cff%02x%02x%02x%s|r";
+      local EXTRACT_FMT = "^|cff(%x%x)(%x%x)(%x%x)(.+)|r$";
 
       local function addColor(r, g, b, name) 
-        if r then return string.format(ADDFMT, r * 255, g * 255, b  * 255, name) 
+        if r then return string.format(ADD_FMT, r * 255, g * 255, b  * 255, name) 
         else return name;
         end;
       end;
 
       local function extractColor(str)
-            local r, g, b, name = str:match(EXTRFMT)
+            local r, g, b, name = str:match(EXTRACT_FMT)
             return r and tonumber(r, 16) / 255 or nil, 
                                  g and tonumber(g, 16) / 255 or nil, 
                                  b and tonumber(b, 16) / 255 or nil,
@@ -1099,33 +1128,48 @@ end;
 --
 local buttonSize = 85;
 
-local resetButton  = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
-resetButton:SetText(L["Button Clear"]);
-resetButton:ClearAllPoints();
-resetButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT", -20 - buttonSize * 1 - 5 * 1, 20);
-resetButton:SetWidth(buttonSize);
-resetButton:SetScript("OnClick", function(self) StaticPopup_Show(POPUP_CLEAR); end);
+RP_Identity.resetButton  = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
+RP_Identity.resetButton:SetText(L["Button Clear"]);
+RP_Identity.resetButton:ClearAllPoints();
+RP_Identity.resetButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT", -20 - buttonSize * 1 - 5 * 1, 20);
+RP_Identity.resetButton:SetWidth(buttonSize);
+RP_Identity.resetButton:SetScript("OnClick", function(self) StaticPopup_Show(POPUP_CLEAR); end);
 
-local cancelButton  = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
-cancelButton:SetText( L["Button Cancel"]);
-cancelButton:ClearAllPoints();
-cancelButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT",  -20, 20);
-cancelButton:SetWidth(buttonSize);
-cancelButton:SetScript("OnClick", function(self) Editor:ClearPending(); Editor:Hide() end);
+RP_Identity.cancelButton  = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
+RP_Identity.cancelButton:SetText( L["Button Cancel"]);
+RP_Identity.cancelButton:ClearAllPoints();
+RP_Identity.cancelButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT",  -20, 20);
+RP_Identity.cancelButton:SetWidth(buttonSize);
+RP_Identity.cancelButton:SetScript("OnClick", function(self) Editor:ClearPending(); Editor:Hide() end);
 
-local saveButton  = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
-saveButton:SetText(L["Button Save"]);
-saveButton:ClearAllPoints();
-saveButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT", -20 - buttonSize * 2 - 5 * 2, 20);
-saveButton:SetWidth(buttonSize);
-saveButton:SetScript("OnClick", function(self) Editor:ApplyPending(); Editor:Hide(); end);
+RP_Identity.saveButton  = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
+RP_Identity.saveButton:SetText(L["Button Save"]);
+RP_Identity.saveButton:ClearAllPoints();
+RP_Identity.saveButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT", -20 - buttonSize * 2 - 5 * 2, 20);
+RP_Identity.saveButton:SetWidth(buttonSize);
+RP_Identity.saveButton:SetScript("OnClick", function(self) Editor:ApplyPending(); Editor:Hide(); end);
 
-local configButton = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
-configButton:SetText(L["Button Config"]);
-configButton:ClearAllPoints();
-configButton:SetPoint("BOTTOMLEFT", Editor.frame, "BOTTOMLEFT", 20, 20);
-configButton:SetWidth(buttonSize);
-configButton:SetScript("OnClick", function() RP_Identity:OpenOptions() end);
+RP_Identity.closeButton  = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
+RP_Identity.closeButton:SetText(L["Button Close"]);
+RP_Identity.closeButton:ClearAllPoints();
+RP_Identity.closeButton:SetPoint("BOTTOMRIGHT", Editor.frame, "BOTTOMRIGHT", -20, 20);
+RP_Identity.closeButton:SetWidth(buttonSize);
+RP_Identity.closeButton:SetScript("OnClick", function(self) Editor:Hide(); end);
+RP_Identity.closeButton:Hide();
+
+RP_Identity.configButton = CreateFrame("Button", nil, Editor.frame, "UIPanelButtonTemplate");
+RP_Identity.configButton:SetText(L["Button Config"]);
+RP_Identity.configButton:ClearAllPoints();
+RP_Identity.configButton:SetPoint("BOTTOMLEFT", Editor.frame, "BOTTOMLEFT", 20, 20);
+RP_Identity.configButton:SetWidth(buttonSize);
+RP_Identity.configButton:SetScript("OnClick", function() Editor:ApplyPending(); RP_Identity:OpenOptions() end);
+RP_Identity.configButton:SetScript("OnShow",
+  function()
+    local autoSave = RP_Identity.db.profile.config.autoSave;
+    RP_Identity.cancelButton:SetShown(not autoSave);
+    RP_Identity.saveButton:SetShown(not autoSave);
+    RP_Identity.closeButton:SetShown(autoSave);
+  end);
 
 local editorTooltipsCheckbox = CreateFrame("Checkbutton", nil, Editor.frame, "ChatConfigCheckButtonTemplate");
 editorTooltipsCheckbox:ClearAllPoints();
@@ -1135,8 +1179,8 @@ editorTooltipsCheckbox:SetPoint("TOPRIGHT", Editor.frame, "TOPRIGHT", -72, -48);
 local function editorTooltipsTooltip()
   GameTooltip:ClearLines();
   GameTooltip:SetOwner(editorTooltipsCheckbox, "ANCHOR_TOP");
-  GameTooltip:AddLine("Editor Tooltips");
-  GameTooltip:AddLine("Uncheck to hide the tooltips in the profile editor.");
+  GameTooltip:AddLine(L["Config Editor Tooltips"]);
+  GameTooltip:AddLine(L["Config Editor Tooltips Tooltip"], 1, 1, 1, true);
   GameTooltip:Show();
 end;
 
@@ -1153,7 +1197,7 @@ editorTooltipsCheckbox:SetScript("OnClick",
   end);
 
 local editorTooltipsLabel = Editor.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalGraySmall");
-editorTooltipsLabel:SetText("Tooltips");
+editorTooltipsLabel:SetText(L["Label Editor Tooltips"]);
 editorTooltipsLabel:SetPoint("LEFT", editorTooltipsCheckbox, "RIGHT", 2, 0);
 
 local SLASH = "/rpid";
@@ -1192,13 +1236,9 @@ function RP_Identity:NotifyStatus()
   notify(L["Your Current Status Is"], menu.FC[status] or status);
 end;
 
-function RP_Identity:NotifyCurrently()
-  notify(L["Your Currently Is"], self.db.profile.myMSP.CU);
-end;
+function RP_Identity:NotifyCurrently() notify(L["Your Currently Is"], self.db.profile.myMSP.CU); end;
 
-function RP_Identity:NotifyInfo()
-  notify(L["Your OOC Info Is"], self.db.profile.myMSP.CO);
-end;
+function RP_Identity:NotifyInfo() notify(L["Your OOC Info Is"], self.db.profile.myMSP.CO); end;
 
 function RP_Identity:SetCurrently(value)
   self.db.profile.myMSP.CU = value;
