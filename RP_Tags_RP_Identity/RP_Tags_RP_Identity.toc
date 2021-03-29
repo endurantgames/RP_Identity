@@ -1,0 +1,15 @@
+## Interface: 90005
+## Version: 9.0.5.1 alpha 2
+## Title: rp|cffdd33aaTags|r RP Module: rp|cff33ff55Identity|r
+## Author: Oraibi-MoonGuard
+## Notes: rp|cffdd33aaTags|r integration module for rp|cff33ff55Identity|r
+## Author: Oraibi-MoonGuard
+## RequiredDeps: RP_Tags, RP_Identity
+## DefaultState: Enabled
+## X-URL: http://spindrift.games/rpid
+## X-RPQModuleId: rptrpid
+## X-RPQModuleType: rpClient
+## X-RPQVersion: 1
+## X-RPQModuleTarget: RP_Identity
+
+load.xml

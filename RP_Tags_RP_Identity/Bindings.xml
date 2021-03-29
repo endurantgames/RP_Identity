@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="RPTAGS_IC_OOC" category="BINDING_HEADER_RPTAGS">
+    RPTAGS.utils.keybind.run("IC_OOC");
+  </Binding>
+</Bindings>
