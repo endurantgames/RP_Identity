@@ -39,11 +39,11 @@
       
             support needed:
             RS = relationship status
+            IC = icon
       
             not supported:
             MU = music
             PE = at first glance
-            IC = icon
             PS = personality traits
             LC = ...color?
       --]]
@@ -57,7 +57,7 @@ local RP_Identity = LibStub("AceAddon-3.0"):NewAddon( addOnName, "AceConsole-3.0
                       -- , "AceTimer-3.0"
                       );
 
-local maskIcon = "Interface\\ICONS\\Ability_Racial_Masquerade";
+local maskIcon = "Interface\\ICONS\\Ability_Racial_Masquerade.PNG";
 
 RP_Identity.addOnName    = addOnName;
 RP_Identity.addOnTitle   = GetAddOnMetadata(addOnName, "Title");
@@ -93,6 +93,7 @@ local myDefaults =
                     raidRequest = false,
                     targetRequest = true,
                     focusRequest = true,
+                    editorTooltips = true,
                   },
               myMSP =
                   { 
@@ -465,7 +466,7 @@ local menu =
         [maskIcon] = L["rpIdentity Icon"],
       },
 
-  ICOrder = { "" },
+  ICOrder = { "", maskIcon },
 
 };
 
@@ -656,14 +657,21 @@ local raceIcons = iconDB.race[playerRace];
 local classIcon = iconDB.class[playerClass];
 
 menu.IC[raceIcons[1]] = localizedRace .. L["Gender (Neutral)"];
-menu.IC[raceIcons[2]] = localizedRace .. L["Gender (Male)"];
-menu.IC[raceIcons[3]] = localizedRace .. L["Gender (Female)"];
-menu.IC[classIcon] = localizedClass;
-
 table.insert(menu.ICOrder, raceIcons[1]);
-table.insert(menu.ICOrder, raceIcons[3]);
-table.insert(menu.ICOrder, raceIcons[2]);
+
+if   raceIcons[3] ~= raceIcons[1]
+then menu.IC[raceIcons[3]] = localizedRace .. L["Gender (Female)"];
+     table.insert(menu.ICOrder, raceIcons[3]);
+end;
+
+if   raceIcons[2] ~= raceIcons[1]
+then menu.IC[raceIcons[2]] = localizedRace .. L["Gender (Male)"];
+     table.insert(menu.ICOrder, raceIcons[2]);
+end;
+
+menu.IC[classIcon] = localizedClass;
 table.insert(menu.ICOrder, classIcon);
+table.insert(menu.ICOrder, "-1");
 
 --     
 -- editor
@@ -675,7 +683,7 @@ Editor:SetWidth( 600);
 Editor:SetHeight(400);
 Editor.frame:SetMinResize(395, 320);
 local maxW, maxH = UIParent:GetSize();
-Editor.frame:SetMaxResize( maxW * 2/3, maxH * 2/3);
+Editor.frame:SetMaxResize( maxW * 2/3, maxH * 3/4);
 Editor.content:ClearAllPoints();
 Editor.content:SetPoint("BOTTOMLEFT", Editor.frame, "BOTTOMLEFT",  20,  50);
 Editor.content:SetPoint("TOPRIGHT",   Editor.frame, "TOPRIGHT",   -20, -35);
@@ -716,13 +724,11 @@ local groupOrder = { "basics", "appearance", "bio", "status", };
 Editor.groups =
 { 
   basics = 
-      { fields = { "name", 
-                   "title", 
-                   "race", 
-                   "class", 
+      { fields = { "name", "title", 
+                   "race", "class", 
                    "honorific", "pronouns", 
-                   "nickname", 
-                   "house",
+                   "nickname", "house",
+                   "icon",
                    "motto",
                  },
 
@@ -776,9 +782,28 @@ function Editor:ApplyPending()
       RP_Identity:UpdateIdentity();
 end;
 
+local Cursor = {};
+
+local function showTooltip(self, event, msp)
+  if not RP_Identity.db.profile.config.editorTooltips then return end;
+  if Cursor[msp or self.MSP] then SetCursor(msp or self.MSP) end;
+  GameTooltip:ClearLines();
+  GameTooltip:SetOwner(self.frame, "ANCHOR_CURSOR");
+  GameTooltip:SetOwner(self.frame, "ANCHOR_PRESERVE");
+  GameTooltip:AddLine(L["Label " .. (msp or self.MSP)]);
+  GameTooltip:AddLine(L["Tooltip " .. (msp or self.MSP)], 1, 1, 1, true);
+  GameTooltip:Show();
+end;
+  
+local function hideTooltip(self, event)
+  GameTooltip:FadeOut();
+  ResetCursor();
+end;
+
 local function fixEditBox(widget)
   local sides = { "Left", "Right", "Middle" };
   local function hide() 
+    hideTooltip()
     if widget.editbox:HasFocus() then return end;
     for _, side in ipairs(sides) 
     do widget.editbox[side]:SetVertexColor(1, 1, 1, 0); 
@@ -790,6 +815,7 @@ local function fixEditBox(widget)
     end;  
   end;
   local function hover() 
+    showTooltip(widget, "OnEnter", widget.tooltipMSP or widget.MSP);
     if widget.editbox:HasFocus() then return end;
     for _, side in ipairs(sides) 
     do widget.editbox[side]:SetVertexColor(1, 1, 0, 1); 
@@ -830,11 +856,17 @@ local function makeDropdown(msp, width, labelW, customW)
 
       custom:SetRelativeWidth(customW > 0 and customW or 0.1)
       custom.MSP = msp;
-      custom:SetCallback("OnEnterPressed", function(self, event, text) Editor:SetMSP(self.MSP, text) end);
+      custom.tooltipMSP = msp .. "-custom";
+      custom:SetCallback("OnEnterPressed", 
+        function(self, event, text) 
+          Editor:SetMSP(self.MSP, text) 
+        end);
       
       local main = AceGUI:Create("Dropdown");
       main:SetRelativeWidth(width > 0 and width or 0.1);
       main.MSP = msp;
+      main:SetCallback("OnEnter", showTooltip);
+      main:SetCallback("OnLeave", hideTooltip);
 
       main.custom = custom;
 
@@ -859,7 +891,7 @@ local function makeDropdown(msp, width, labelW, customW)
                            if key == "-1"
                            then custom:SetDisabled(false);
                                 custom:SetFocus();
-                                custom:SetText("");
+                                Editor:SetMSP(self.MSP, custom:GetText())
                            else custom:SetDisabled(true);
                                 Editor:SetMSP(self.MSP, key);
                            end;
@@ -879,9 +911,39 @@ local function makeMultiLine(msp, lines, width)
                    else main:SetRelativeWidth(width)
       end;
       main.MSP = msp;
+      main:SetCallback("OnEnter", showTooltip);
+      main:SetCallback("OnLeave", hideTooltip);
       main:SetText( Editor:GetMSP(msp) );
       main:SetCallback("OnEnterPressed", function(self, event, text) Editor:SetMSP(self.MSP, text); end);
       return { main };
+end;
+
+local function makeIcon(msp, iconSize, iconWidth, dropdownWidth, customWidth)
+  local icon = AceGUI:Create("Icon");
+  icon.MSP = msp;
+  icon.tooltipMSP = msp .. "-icon";
+  icon:SetImageSize(iconSize, iconSize);
+  icon:SetRelativeWidth(iconWidth);
+  icon:SetImage(Editor:GetMSP(msp));
+  local dropdown, custom = unpack(makeDropdown(msp, dropdownWidth, 0, customWidth));
+  custom:SetCallback("OnEnterPressed",
+    function(self, event, text)
+      Editor:SetMSP(self.MSP, text) 
+      icon:SetImage(text)
+    end);
+  dropdown:SetCallback("OnValueChanged",
+    function(self, event, key)
+      if key == "-1"
+      then custom:SetDisabled(false);
+           custom:SetFocus();
+           icon:SetImage(custom:GetText());
+           Editor:SetMSP(self.MSP, key);
+      else custom:SetDisabled(true);
+           Editor:SetMSP(self.MSP, key);
+           icon:SetImage(key);
+      end;
+    end);
+  return { icon, dropdown, custom };
 end;
 
 local function makeColorfulEditBox(msp, width, labelWidth)
@@ -908,16 +970,20 @@ local function makeColorfulEditBox(msp, width, labelWidth)
       fixEditBox(main);
       main:SetRelativeWidth(width); 
       main.MSP = msp;
+      main:SetCallback("OnEnter", showTooltip);
+      main:SetCallback("OnLeave", hideTooltip);
 
       local picker = AceGUI:Create("ColorPicker");
       picker.MSP = msp;
       picker:SetHasAlpha(false);
       picker:SetRelativeWidth(0.1);
       picker.main = main;
+      picker.tooltipMSP = "Color";
+      picker:SetCallback("OnEnter", showTooltip);
+      picker:SetCallback("OnLeave", hideTooltip);
 
       picker:SetCallback("OnValueConfirmed",
             function(self, event, r, g, b, a)
-                  print("r, g, b", r, g, b);
                   Editor:SetMSP(self.MSP, addColor(r, g, b, self.main:GetText() ));
                   self.r, self.g, self.b = r, g, b;
             end);
@@ -960,6 +1026,7 @@ local frameConstructor =
 
       motto      = function() return makeEditBox("MO", 0.85, 0.15             ) end,
 
+      icon        = function() return makeIcon("IC", 50, 0.15, 0.30, 0.50    ) end, 
 
       rpStatus   = function() return makeDropdown("FC", 0.25, 0, 0.25       ) end,
       rpStyle    = function() return makeDropdown("FR", 0.25, 0, 0.25       ) end,
@@ -967,8 +1034,8 @@ local frameConstructor =
       oocInfo    = function() return makeMultiLine("CO", 12, 0.5             ) end,
 
       eyes       = function() return makeColorfulEditBox("AE", 0.75, 0.15     ) end,
-      height     = function() return makeEditBox("AH", 0.75, 0.15             ) end,
-      weight     = function() return makeEditBox("AW", 0.75, 0.15            ) end,
+      height     = function() return makeEditBox("AH", 0.85, 0.15             ) end,
+      weight     = function() return makeEditBox("AW", 0.85, 0.15            ) end,
       desc       = function() return makeMultiLine("DE", 12                 ) end,
 
       age        = function() return makeEditBox("AG", 0.85, 0.15             ) end,
@@ -1058,7 +1125,36 @@ configButton:SetText(L["Button Config"]);
 configButton:ClearAllPoints();
 configButton:SetPoint("BOTTOMLEFT", Editor.frame, "BOTTOMLEFT", 20, 20);
 configButton:SetWidth(buttonSize);
-configButton:SetScript("OnClick", openOptions);
+configButton:SetScript("OnClick", function() RP_Identity:OpenOptions() end);
+
+local editorTooltipsCheckbox = CreateFrame("Checkbutton", nil, Editor.frame, "ChatConfigCheckButtonTemplate");
+editorTooltipsCheckbox:ClearAllPoints();
+editorTooltipsCheckbox:SetSize(20,20);
+editorTooltipsCheckbox:SetPoint("TOPRIGHT", Editor.frame, "TOPRIGHT", -72, -48);
+
+local function editorTooltipsTooltip()
+  GameTooltip:ClearLines();
+  GameTooltip:SetOwner(editorTooltipsCheckbox, "ANCHOR_TOP");
+  GameTooltip:AddLine("Editor Tooltips");
+  GameTooltip:AddLine("Uncheck to hide the tooltips in the profile editor.");
+  GameTooltip:Show();
+end;
+
+editorTooltipsCheckbox:SetScript("OnEnter", editorTooltipsTooltip);
+editorTooltipsCheckbox:SetScript("OnLeave", hideTooltip);
+editorTooltipsCheckbox:SetScript("OnShow", 
+  function(self)
+    self:SetChecked(RP_Identity.db.profile.config.editorTooltips);
+  end);
+editorTooltipsCheckbox:SetScript("OnClick",
+  function(self)
+    RP_Identity.db.profile.config.editorTooltips = self:GetChecked();
+    self:SetChecked(RP_Identity.db.profile.config.editorTooltips);
+  end);
+
+local editorTooltipsLabel = Editor.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalGraySmall");
+editorTooltipsLabel:SetText("Tooltips");
+editorTooltipsLabel:SetPoint("LEFT", editorTooltipsCheckbox, "RIGHT", 2, 0);
 
 local SLASH = "/rpid";
 _G["SLASH_RP_IDENTITY1"] = SLASH;
