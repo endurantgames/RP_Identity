@@ -24,11 +24,13 @@
             GU = game GUID
             HB = birthplace
             HH = home
+            IC = icon
             MO = motto
             NA = name
             NH = house
             NI = nickname
             NT = title
+            PE = at first glance
             PN = pronouns
             PX = honorific
             RA = race
@@ -39,20 +41,24 @@
       
             support needed:
             RS = relationship status
-            IC = icon
       
             not supported:
             MU = music
-            PE = at first glance
             PS = personality traits
             LC = ...color?
       --]]
  
 local addOnName, ns = ...;
 
-local ALL_FIELDS = { "AE", "AG", "AH", "AW", "CO", "CU", "DE", "FC", "FR", "HB", "HH", "MO", "NA", "NH", "NI", "NT", "PN", "PX", "RA", "RC", "TR", "VA", "VP" };
+local ALL_FIELDS = { 
+  "AE", "AG", "AH", "AW", "CO", 
+  "CU", "DE", "FC", "FR", "HB", 
+  "HH", "IC", "MO", "NA", "NH", "NI", 
+  "NT", "PE", "PN", "PX", "RA", "RC", 
+  "TR", "VA", "VP" 
+};
 
-msp:AddFieldsToTooltip("CO", "RC", "IC", "PN")
+msp:AddFieldsToTooltip("CO", "RC", "IC", "PN", "PE")
 local L = LibStub("AceLocale-3.0"):GetLocale(addOnName);
 local AceGUI = LibStub("AceGUI-3.0");
 
@@ -61,6 +67,7 @@ local RP_Identity = LibStub("AceAddon-3.0"):NewAddon( addOnName, "AceConsole-3.0
                       );
 
 local maskIcon = "Interface\\ICONS\\Ability_Racial_Masquerade.PNG";
+local maskIconNoPath = "Ability_Racial_Masquerade.PNG";
 
 RP_Identity.addOnName    = addOnName;
 RP_Identity.addOnTitle   = GetAddOnMetadata(addOnName, "Title");
@@ -113,7 +120,7 @@ local myDefaults =
                         FR = "0",
                         HB = "",
                         HI = "",
-                        IC = maskIcon,
+                        IC = maskIconNoPath,
                         HO = "",
                         MO = "",
                         NA = UnitName("player"),
@@ -132,6 +139,26 @@ local myDefaults =
                         -- GR = UnitRace("player"),
                         -- GS = UnitSex("player") .. "",
                         -- GU = UnitGUID("player"),
+                        ["PE1-icon"] = "",
+                        ["PE1-title"] = "",
+                        ["PE1-text"] = "",
+                        ["PE1-icon-custom"] = "",
+                        ["PE2-icon"] = "",
+                        ["PE2-title"] = "",
+                        ["PE2-text"] = "",
+                        ["PE2-icon-custom"] = "",
+                        ["PE3-icon"] = "",
+                        ["PE3-title"] = "",
+                        ["PE3-text"] = "",
+                        ["PE3-icon-custom"] = "",
+                        ["PE4-icon"] = "",
+                        ["PE4-title"] = "",
+                        ["PE4-text"] = "",
+                        ["PE4-icon-custom"] = "",
+                        ["PE5-icon"] = "",
+                        ["PE5-title"] = "",
+                        ["PE5-text"] = "",
+                        ["PE5-icon-custom"] = "",
                   },
             },
       };
@@ -152,7 +179,6 @@ function RP_Identity:OnInitialize()
       self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", myDefaults);
 
       function self:UpdateIdentity()
-            print("me is", me);
             for  field, value in pairs(self.db.profile.myMSP) 
             do   msp.my[field] = value; 
                  msp.char[me].field[field] = value;
@@ -449,6 +475,51 @@ function RP_Identity:ResetIdentity()
   self:UpdateIdentity();
 end; 
 
+local function generatePE(self)
+  print("here we are about to generate some PE");
+  local recordSeparator = "\n\n---\n\n"; -- who thought this up?
+  local questionMark = "|TInterface\\Icons\\INV_Misc_QuestionMark:32:32|t";
+  local glanceList = { "PE1", "PE2", "PE3", "PE4", "PE5" };
+  local holder = {};
+
+  local function helper(title, text, icon, custom)
+    local newline = "\n";
+    local record = {};
+    if     icon and icon ~= "-1" and icon ~= ""
+    then   table.insert(record, "|TInterface\\Icons\\" .. icon .. ":32:32|t");
+    elseif icon == "-1" and custom and custom ~= ""
+    then   table.insert(record, "|TInterface\\Icons\\" .. custom .. ":32:32|t");
+    else   table.insert(record, questionMark);
+    end;
+    table.insert(record, newline);
+    table.insert(record, "#");
+    table.insert(record, title ~= "" or "...");
+    table.insert(record, newline);
+    table.insert(record, newline);
+    table.insert(record, text ~= "" or "...");
+    return table.concat(record);
+  end;
+
+  for _, glance in ipairs(glanceList)
+  do  
+      print("creating glance", glance);
+      local title  = self:GetMSP(glance .. "-title");
+      print("title is: [" .. (title or "nil") .. "]");
+      local text   = self:GetMSP(glance .. "-text");
+      print("text is: [" .. (text or "nil") .. "]");
+      local icon   = self:GetMSP(glance .. "-icon");
+      print("icon is: [" .. (icon or "nil") .. "]");
+      local custom = self:GetMSP(glance .. "-icon-custom");
+      print("custom is: [" .. (custom or "nil") .. "]");
+      if title ~= "" or text ~= "" or icon ~= "" or custom ~= ""
+      then table.insert(holder, helper(title, text, icon, custom))
+      end;
+  end;
+  self:SetMSP("PE", table.concat(holder, recordSeparator));
+end;
+
+RP_Identity.GeneratePE = generatePE;
+
 -- menu data
 --
 local menu =
@@ -495,12 +566,12 @@ local menu =
   PXOrder = { "", },
 
   IC =
-      { ["-1"    ] = L["Custom Icon"],
-        [""      ] = L["Undefined"  ],
-        [maskIcon] = L["rpIdentity Icon"],
+      { ["-1"          ] = L["Custom Icon"],
+        [""            ] = L["Undefined"  ],
+        [maskIconNoPath] = L["rpIdentity Icon"],
       },
 
-  ICOrder = { "", maskIcon },
+  ICOrder = { "", maskIconNoPath },
 
 };
 
@@ -526,160 +597,192 @@ local iconDB =
   race = {
     
     ["BloodElf"] = { 
-      [1] = ICONS.."achievement_character_bloodelf_female",
-      [2] = ICONS.."achievement_character_bloodelf_male",
-      [3] = ICONS.."achievement_character_bloodelf_female",
+      [1] = "achievement_character_bloodelf_female",
+      [2] = "achievement_character_bloodelf_male",
+      [3] = "achievement_character_bloodelf_female",
     },
 
     ["DarkIronDwarf"] = { 
-      [1] = ICONS.."ability_racial_foregedinflames",
-      [2] = ICONS.."ability_racial_fireblood",
-      [3] = ICONS.."ability_racial_foregedinflames",
+      [1] = "ability_racial_foregedinflames",
+      [2] = "ability_racial_fireblood",
+      [3] = "ability_racial_foregedinflames",
     },
 
     ["Draenei"] = {
-      [1] = ICONS.."achievement_character_draenei_female",
-      [2] = ICONS.."achievement_character_draenei_male",
-      [3] = ICONS.."achievement_character_draenei_female",
+      [1] = "achievement_character_draenei_female",
+      [2] = "achievement_character_draenei_male",
+      [3] = "achievement_character_draenei_female",
     },
 
     ["Dwarf"] = {
-    [1] = ICONS.."achievement_character_dwarf_female",
-      [2] = ICONS.."achievement_character_dwarf_male",
-      [3] = ICONS.."achievement_character_dwarf_female",
+    [1] = "achievement_character_dwarf_female",
+      [2] = "achievement_character_dwarf_male",
+      [3] = "achievement_character_dwarf_female",
     },
 
     ["Gnome"] = {
-      [1] = ICONS.."achievement_character_gnome_female",
-      [2] = ICONS.."achievement_character_gnome_male",
-      [3] = ICONS.."achievement_character_gnome_female",
+      [1] = "achievement_character_gnome_female",
+      [2] = "achievement_character_gnome_male",
+      [3] = "achievement_character_gnome_female",
     },
 
     ["Goblin"] = {
-      [1] = ICONS.."ability_racial_rocketjump",
-      [2] = ICONS.."ability_racial_rocketjump",
-      [3] = ICONS.."ability_racial_rocketjump",
+      [1] = "ability_racial_rocketjump",
+      [2] = "ability_racial_rocketjump",
+      [3] = "ability_racial_rocketjump",
     },
 
     ["HighmountainTauren"] = {
-      [1] = ICONS.."achievement_alliedrace_highmountaintauren",
-      [2] = ICONS.."ability_racial_bullrush",
-      [3] = ICONS.."achievement_alliedrace_highmountaintauren",
+      [1] = "achievement_alliedrace_highmountaintauren",
+      [2] = "ability_racial_bullrush",
+      [3] = "achievement_alliedrace_highmountaintauren",
     },
 
     ["Human"] = {
-      [1] = ICONS.."achievement_character_human_female",
-      [2] = ICONS.."achievement_character_human_male",
-      [3] = ICONS.."achievement_character_human_female",
+      [1] = "achievement_character_human_female",
+      [2] = "achievement_character_human_male",
+      [3] = "achievement_character_human_female",
     },
 
     ["KulTiran"] = {
-      [1] = ICONS.."ability_racial_childofthesea",
-      [2] = ICONS.."achievement_boss_zuldazar_manceroy_mestrah",
-      [3] = ICONS.."ability_racial_childofthesea",
+      [1] = "ability_racial_childofthesea",
+      [2] = "achievement_boss_zuldazar_manceroy_mestrah",
+      [3] = "ability_racial_childofthesea",
     },
 
     ["LightforgedDraenei"] = {
-      [1] = ICONS.."achievement_alliedrace_lightforgeddraenei",
-      [2] = ICONS.."ability_racial_finalverdict",
-      [3] = ICONS.."achievement_alliedrace_lightforgeddraenei",
+      [1] = "achievement_alliedrace_lightforgeddraenei",
+      [2] = "ability_racial_finalverdict",
+      [3] = "achievement_alliedrace_lightforgeddraenei",
     },
 
     ["MagharOrc"] = {
-      [1] = ICONS.."achievement_character_orc_female_brn",
-      [2] = ICONS.."achievement_character_orc_male_brn",
-      [3] = ICONS.."achievement_character_orc_female_brn",
+      [1] = "achievement_character_orc_female_brn",
+      [2] = "achievement_character_orc_male_brn",
+      [3] = "achievement_character_orc_female_brn",
     },
 
     ["Mechagnome"] = {
-      [1] = ICONS.."inv_plate_mechagnome_c_01helm",
-      [2] = ICONS.."ability_racial_hyperorganiclightoriginator",
-      [3] = ICONS.."inv_plate_mechagnome_c_01helm",
+      [1] = "inv_plate_mechagnome_c_01helm",
+      [2] = "ability_racial_hyperorganiclightoriginator",
+      [3] = "inv_plate_mechagnome_c_01helm",
     },
 
     ["NightElf"] = {
-      [1] = ICONS.."achievement_character_nightelf_female",
-      [2] = ICONS.."achievement_character_nightelf_male",
-      [3] = ICONS.."achievement_character_nightelf_female",
+      [1] = "achievement_character_nightelf_female",
+      [2] = "achievement_character_nightelf_male",
+      [3] = "achievement_character_nightelf_female",
     },
 
     ["Nightborne"] = {
-      [1] = ICONS.."ability_racial_masquerade",
-      [2] = ICONS.."ability_racial_dispelillusions",
-      [3] = ICONS.."ability_racial_masquerade",
+      [1] = "ability_racial_masquerade",
+      [2] = "ability_racial_dispelillusions",
+      [3] = "ability_racial_masquerade",
     },
 
     ["Orc"] = {
-      [1] = ICONS.."achievement_character_orc_female",
-      [2] = ICONS.."achievement_character_orc_male",
-      [3] = ICONS.."achievement_character_orc_female",
+      [1] = "achievement_character_orc_female",
+      [2] = "achievement_character_orc_male",
+      [3] = "achievement_character_orc_female",
     },
 
     ["Pandaren"] = {
-      [1] = ICONS.."achievement_character_pandaren_female",
-      [2] = ICONS.."achievement_guild_classypanda",
-      [3] = ICONS.."achievement_character_pandaren_female",
+      [1] = "achievement_character_pandaren_female",
+      [2] = "achievement_guild_classypanda",
+      [3] = "achievement_character_pandaren_female",
     },
 
     ["Scourge"] = {
-      [1] = ICONS.."achievement_character_undead_female",
-      [2] = ICONS.."achievement_character_undead_male",
-      [3] = ICONS.."achievement_character_undead_female",
+      [1] = "achievement_character_undead_female",
+      [2] = "achievement_character_undead_male",
+      [3] = "achievement_character_undead_female",
     },
 
     ["Tauren"] = {
-      [1] = ICONS.."achievement_character_tauren_female",
-      [2] = ICONS.."achievement_character_tauren_male",
-      [3] = ICONS.."achievement_character_tauren_female",
+      [1] = "achievement_character_tauren_female",
+      [2] = "achievement_character_tauren_male",
+      [3] = "achievement_character_tauren_female",
     },
 
     ["Troll"] = {
-      [1] = ICONS.."achievement_character_troll_female",
-      [2] = ICONS.."achievement_character_troll_male",
-      [3] = ICONS.."achievement_character_troll_female",
+      [1] = "achievement_character_troll_female",
+      [2] = "achievement_character_troll_male",
+      [3] = "achievement_character_troll_female",
     },
 
     ["VoidElf"] = {
-      [1] = ICONS.."ability_racial_preturnaturalcalm",
-      [2] = ICONS.."ability_racial_entropicembrace",
-      [3] = ICONS.."ability_racial_preturnaturalcalm",
+      [1] = "ability_racial_preturnaturalcalm",
+      [2] = "ability_racial_entropicembrace",
+      [3] = "ability_racial_preturnaturalcalm",
     },
 
     ["Vulpera"] = {
-      [1] = ICONS.."ability_racial_nosefortrouble",
-      [2] = ICONS.."ability_racial_nosefortrouble",
-      [3] = ICONS.."ability_racial_nosefortrouble",
+      [1] = "ability_racial_nosefortrouble",
+      [2] = "ability_racial_nosefortrouble",
+      [3] = "ability_racial_nosefortrouble",
     },
 
     ["Worgen"] = {
-      [1] = ICONS.."ability_racial_viciousness",
-      [2] = ICONS.."achievement_worganhead",
-      [3] = ICONS.."ability_racial_viciousness",
+      [1] = "ability_racial_viciousness",
+      [2] = "achievement_worganhead",
+      [3] = "ability_racial_viciousness",
     },
 
     ["ZandalariTroll"] = {
-      [1] = ICONS.."inv_zandalarifemalehead",
-      [2] = ICONS.."inv_zandalarimalehead",
-      [3] = ICONS.."inv_zandalarifemalehead",
+      [1] = "inv_zandalarifemalehead",
+      [2] = "inv_zandalarimalehead",
+      [3] = "inv_zandalarifemalehead",
     },
     
   }, -- race
   
 class =
   { 
-    ["WARRIOR"     ] = ICONS.."ClassIcon_Warrior",
-    ["PALADIN"     ] = ICONS.."ClassIcon_Paladin",
-    ["HUNTER"      ] = ICONS.."ClassIcon_Hunter",
-    ["ROGUE"       ] = ICONS.."ClassIcon_Rogue",
-    ["PRIEST"      ] = ICONS.."ClassIcon_Priest",
-    ["DEATHKNIGHT" ] = ICONS.."ClassIcon_DeathKnight",
-    ["SHAMAN"      ] = ICONS.."ClassIcon_Shaman",
-    ["MAGE"        ] = ICONS.."ClassIcon_Mage",
-    ["WARLOCK"     ] = ICONS.."ClassIcon_Warlock",
-    ["MONK"        ] = ICONS.."ClassIcon_Monk",
-    ["DRUID"       ] = ICONS.."ClassIcon_Druid",
-    ["DEMONHUNTER" ] = ICONS.."ClassIcon_DemonHunter",
+    ["WARRIOR"     ] = "ClassIcon_Warrior",
+    ["PALADIN"     ] = "ClassIcon_Paladin",
+    ["HUNTER"      ] = "ClassIcon_Hunter",
+    ["ROGUE"       ] = "ClassIcon_Rogue",
+    ["PRIEST"      ] = "ClassIcon_Priest",
+    ["DEATHKNIGHT" ] = "ClassIcon_DeathKnight",
+    ["SHAMAN"      ] = "ClassIcon_Shaman",
+    ["MAGE"        ] = "ClassIcon_Mage",
+    ["WARLOCK"     ] = "ClassIcon_Warlock",
+    ["MONK"        ] = "ClassIcon_Monk",
+    ["DRUID"       ] = "ClassIcon_Druid",
+    ["DEMONHUNTER" ] = "ClassIcon_DemonHunter",
   }, -- class
+glance = 
+  {
+    ["-1"                                    ] = L["Custom Icon"],
+    [""                                      ] = L["Undefined"  ],
+    [maskIconNoPath                          ] = L["rpIdentity Icon"],
+    ["Ability_Hunter_BeastCall"              ] = L["Ability_Hunter_BeastCall"              ],
+    ["INV_Inscription_ScrollOfWisdom_01"     ] = L["INV_Inscription_ScrollOfWisdom_01"     ],
+    ["inv_jewelry_ring_14"                   ] = L["inv_jewelry_ring_14"                   ],
+    ["INV_Inscription_inkblack01"            ] = L["INV_Inscription_inkblack01"            ],
+    ["vas_namechange"                        ] = L["vas_namechange"                        ],
+    ["inv_misc_kingsring1"                   ] = L["inv_misc_kingsring1"                   ],
+    ["spell_shadow_mindsteal"                ] = L["spell_shadow_mindsteal"                ],
+    ["INV_Misc_QuestionMark"                 ] = L["INV_Misc_QuestionMark"                 ],
+    ["Achievement_Character_Human_Female"    ] = L["Achievement_Character_Human_Female"    ],
+    ["achievement_halloween_smiley_01"       ] = L["achievement_halloween_smiley_01"       ],
+    ["Achievement_Character_Nightelf_Female" ] = L["Achievement_Character_Nightelf_Female" ],
+    ["achievement_doublerainbow"             ] = L["achievement_doublerainbow"             ],
+    ["trade_archaeology_delicatemusicbox"    ] = L["trade_archaeology_delicatemusicbox"    ],
+    ["achievement_worganhead"                ] = L["achievement_worganhead"                ],
+    ["Achievement_Character_Human_Male"      ] = L["Achievement_Character_Human_Male"      ],
+    ["ability_priest_heavanlyvoice"          ] = L["ability_priest_heavanlyvoice"          ],
+    ["ui_rankedpvp_02_small"                 ] = L["ui_rankedpvp_02_small"                 ],
+    ["Ability_Warrior_StrengthOfArms"        ] = L["Ability_Warrior_StrengthOfArms"        ],
+    ["ui_rankedpvp_03_small"                 ] = L["ui_rankedpvp_03_small"                 ],
+    ["achievement_character_human_female"    ] = L["achievement_character_human_female"    ],
+    ["Ability_Racial_PreturnaturalCalm"      ] = L["Ability_Racial_PreturnaturalCalm"      ],
+    ["ability_bossashvane_icon02"            ] = L["ability_bossashvane_icon02"            ],
+    ["ui_rankedpvp_04_small"                 ] = L["ui_rankedpvp_04_small"                 ],
+    ["petbattle_health"                      ] = L["petbattle_health"                      ],
+    ["achievement_character_bloodelf_female" ] = L["achievement_character_bloodelf_female" ],
+    
+  },
 };
 
 -- iconDB
@@ -707,6 +810,8 @@ menu.IC[classIcon] = localizedClass;
 table.insert(menu.ICOrder, classIcon);
 table.insert(menu.ICOrder, "-1");
 
+for i = 1, 5 do menu["PE" .. i .. "-icon"] = iconDB.glance; end;
+
 --     
 -- editor
 --
@@ -720,7 +825,7 @@ local maxW, maxH = UIParent:GetSize();
 Editor.frame:SetMaxResize( maxW * 2/3, maxH * 3/4);
 Editor.content:ClearAllPoints();
 Editor.content:SetPoint("BOTTOMLEFT", Editor.frame, "BOTTOMLEFT",  20,  50);
-Editor.content:SetPoint("TOPRIGHT",   Editor.frame, "TOPRIGHT",   -20, -35);
+Editor.content:SetPoint("TOPRIGHT",   Editor.frame, "TOPRIGHT",   -20, -40);
 Editor:SetTitle(RP_Identity.addOnTitle)
 Editor.frame:SetClampedToScreen(true);
 Editor:SetLayout("Flow");
@@ -731,7 +836,6 @@ local EditorFrameName = "RP_Identity_Editor_Frame";
 _G[EditorFrameName]   = Editor.frame;
 tinsert(UISpecialFrames, EditorFrameName);
 RP_Identity.Editor = Editor;
-
 
 function RP_Identity:EditIdentity() self.Editor:ReloadTab(); self.Editor:Show(); end;
 
@@ -753,7 +857,7 @@ StaticPopupDialogs[POPUP_CLEAR] =
 
 -- editor config 
 --
-local groupOrder = { "basics", "appearance", "bio", "status", };
+local groupOrder = { "basics", "appearance", "glance", "bio", "status"};
 
 Editor.groups =
 { 
@@ -785,6 +889,12 @@ Editor.groups =
       { fields = { "age", "birthPlace", "home", "history" },
         title  = L["Group Bio"],
       },
+
+  glance =
+      { -- fields = { "glance1", "glance2", "glance3", "glance4", "glance5" },
+        fields = { "glances" },
+        title = L["Group Glance"],
+      },
 };
 
 -- initialization
@@ -796,8 +906,12 @@ do  local groupData = Editor.groups[groupName];
 end;
 
 -- pending changes
---
-function Editor:GetMSP(msp) return self.pending[msp] and self.pending[msp] or RP_Identity:GetMSP(msp); end; 
+
+function Editor:GetMSP(msp) 
+  return self.pending[msp] 
+     and self.pending[msp] 
+      or RP_Identity:GetMSP(msp); 
+end; 
 function Editor:SetMSP(msp, value) 
       if RP_Identity.db.profile.config.autoSave
       then RP_Identity:SetMSP(msp, value);
@@ -805,6 +919,8 @@ function Editor:SetMSP(msp, value)
            self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile() .. L["(not saved)"]);
       end;
 end;
+
+Editor.GeneratePE = generatePE;
 
 function Editor:ClearPending() 
   self.pending = {} 
@@ -866,6 +982,14 @@ local function fixEditBox(widget)
   widget:SetCallback("OnLeave", hide);
 end;
     
+local function makeInstruct(text)
+  local widget = AceGUI:Create("Label");
+  widget:SetText(text);
+  widget:SetColor(1, 1, 1, 1);
+  widget:SetFullWidth(true);
+  return { widget };
+end;
+
 local function makeLabel(msp, width)
       local w = AceGUI:Create("Label");
       w.MSP = msp;
@@ -909,7 +1033,6 @@ local function makeDropdown(msp, width, labelW, customW)
       main.custom = custom;
 
       local myMenu = menu[msp];
-
       local initialValue = Editor:GetMSP(msp);
 
       if   myMenu[initialValue]
@@ -945,9 +1068,7 @@ local function makeMultiLine(msp, lines, width)
       local main = AceGUI:Create("MultiLineEditBox");
       main:SetLabel(L["Label " .. msp]);
       main:SetNumLines(lines or 3);
-      if not width then main:SetFullWidth(true);
-                   else main:SetRelativeWidth(width)
-      end;
+      if not width then main:SetFullWidth(true); else main:SetRelativeWidth(width) end;
       main.MSP = msp;
       main:SetCallback("OnEnter", showTooltip);
       main:SetCallback("OnLeave", hideTooltip);
@@ -962,23 +1083,32 @@ local function makeIcon(msp, iconSize, iconWidth, dropdownWidth, customWidth)
   icon.tooltipMSP = msp .. "-icon";
   icon:SetImageSize(iconSize, iconSize);
   icon:SetRelativeWidth(iconWidth);
-  icon:SetImage(Editor:GetMSP(msp));
+
+  function icon.SetIcon(self, iconFile) 
+    if not iconFile or iconFile == ""
+    then self:SetImage();
+    else self:SetImage("Interface\\ICONS\\" .. iconFile); 
+    end;
+  end;
+  icon:SetIcon(Editor:GetMSP(msp));
+
   local dropdown, custom = unpack(makeDropdown(msp, dropdownWidth, 0, customWidth));
+
   custom:SetCallback("OnEnterPressed",
     function(self, event, text)
       Editor:SetMSP(self.MSP, text) 
-      icon:SetImage(text)
+      icon:SetIcon(text)
     end);
   dropdown:SetCallback("OnValueChanged",
     function(self, event, key)
       if key == "-1"
       then custom:SetDisabled(false);
            custom:SetFocus();
-           icon:SetImage(custom:GetText());
+           icon:SetIcon(custom:GetText());
            Editor:SetMSP(self.MSP, key);
       else custom:SetDisabled(true);
            Editor:SetMSP(self.MSP, key);
-           icon:SetImage(key);
+           icon:SetIcon(key);
       end;
     end);
   return { icon, dropdown, custom };
@@ -1043,44 +1173,211 @@ local function makeColorfulEditBox(msp, width, labelWidth)
       return { label, main, picker };
 end;
 
+
+local function makeGlances()
+  local widgets = {};
+  local preview = {};
+  local groupOrder = { "PE1", "PE2", "PE3", "PE4", "PE5" };
+  local glancesGroup = AceGUI:Create("SimpleGroup");
+
+  local function createPreviewIcon(msp)
+    local frameGlow = "Interface\\Buttons\\ButtonHilight-SquareQuickslot";
+    local bigNumbers = "Interface\\Timer\\BigTimerNumbers";
+    local glowNumbers = "Interface\\Timer\\BigTimerNumbersGlow";
+    local numberCoords = 
+    { PE1 = { L = 1/4, R = 2/4, T = 0/3, B = 1/3 },
+      PE2 = { L = 2/4, R = 3/4, T = 0/3, B = 1/3 },
+      PE3 = { L = 3/4, R = 4/4, T = 0/3, B = 1/3 },
+      PE4 = { L = 0/4, R = 1/4, T = 1/3, B = 2/3 },
+      PE5 = { L = 1/4, R = 2/4, T = 1/3, B = 2/3 },
+    }
+    local icon = AceGUI:Create("IconNoHighlight")
+
+    local r, g, b, a = unpack(RP_Identity.addOnColor);
+
+    icon.MSP        = msp;
+    icon.tooltipMSP = msp .. "-icon";
+    icon:SetRelativeWidth(0.19);
+    icon:SetImageSize(64, 64);
+
+    icon.buttonglow = icon:CreateTexture(nil, "HIGHLIGHT");
+    icon.buttonglow:SetSize(69, 69);
+    icon.buttonglow:SetPoint("TOP", -2, -5);
+    icon.buttonglow:SetTexture(frameGlow);
+    icon.buttonglow:SetBlendMode("ADD")
+    icon.buttonglow:SetDesaturated(true);
+
+    local edge = numberCoords[msp];
+    icon.numberglow = icon:CreateTexture(nil, "HIGHLIGHT");
+    icon.numberglow:SetSize(64, 64);
+    icon.numberglow:SetPoint("TOP", 0, -5);
+    icon.numberglow:SetTexture(glowNumbers);
+    icon.numberglow:SetTexCoord(edge.L, edge.R, edge.T, edge.B);
+    icon.numberglow:SetVertexColor(r, g, b, 0.5);
+    icon.numberglow:SetBlendMode("BLEND")
+
+    for _, highlight in ipairs({ icon.numberglow, icon.buttonglow })
+    do function highlight:MakeVisible()   self:SetVertexColor(r, g, b, 0.5) end;
+       function highlight:MakeInvisible() self:SetVertexColor(r, g, b, 0) end;
+       function highlight:MakeBright()    self:SetVertexColor(r, g, b, 1) end;
+    end;
+
+    function icon:SetIcon(useThisIcon)
+      local iconFile   = useThisIcon or Editor:GetMSP(self.MSP .. "-icon");
+      local customIcon = Editor:GetMSP(self.MSP .. "-icon-custom");
+      if     iconFile == "-1" and customIcon ~= ""
+      then   self:SetImage("Interface\\ICONS\\" .. customIcon)
+             self.highlight = self.buttonglow;
+      elseif iconFile ~= ""
+      then   self:SetImage("Interface\\ICONS\\" .. iconFile);
+             self.highlight = self.buttonglow;
+      else   self:SetImage(bigNumbers, edge.L, edge.R, edge.T, edge.B);
+             self.image:SetDesaturated(true);
+             self.image:SetVertexColor(r, g, b, 0.5);
+             self.highlight = self.numberglow;
+      end;
+      self.numberglow:MakeInvisible();
+      self.buttonglow:MakeInvisible();
+      if glancesGroup.current == self.MSP
+      then self.highlight:MakeBright();
+      else self.highlight:MakeVisible();
+      end;
+    end;
+
+    local function icon_OnClick(self, event)
+      glancesGroup:SelectGlance(self.MSP) 
+    end;
+    icon:SetCallback("OnClick", icon_OnClick);
+    icon:SetIcon();
+    table.insert(widgets, icon);
+    preview[msp] = icon;
+
+  end;
+
+  function glancesGroup:SelectGlance(msp)
+    local items;
+    glancesGroup.current = msp;
+    for iconMSP, icon in pairs(preview)
+    do if iconMSP == msp 
+       then icon:LockHighlight() 
+            icon.highlight:MakeBright();
+       else icon:UnlockHighlight(); 
+            icon.highlight:MakeVisible();
+       end;
+    end;
+    self:ReleaseChildren();
+
+    local heading = AceGUI:Create("Heading");
+    heading:SetFullWidth(true);
+    heading:SetText(L["Label " .. msp]);
+    self:AddChild(heading);
+
+    items = makeEditBox(msp .. "-title", 0.85, 0.15);
+    for _, item in ipairs(items) do self:AddChild(item); end;
+
+    local left = AceGUI:Create("SimpleGroup");
+    local middle = AceGUI:Create("Label");
+    local right = AceGUI:Create("SimpleGroup");
+    left:SetRelativeWidth(0.45);
+    middle:SetRelativeWidth(0.05);
+    right:SetRelativeWidth(0.45);
+    self:AddChild(left);
+    self:AddChild(middle);
+    self:AddChild(right);
+    
+    local function custom_OnEnterPressed(self, event, text)
+      Editor:SetMSP(self.MSP, text) 
+      Editor:GeneratePE();
+      self.icon:SetIcon()
+    end;
+
+    local function dropdown_OnValueChanged(self, event, key)
+      Editor:SetMSP(self.MSP, key);
+      Editor:GeneratePE();
+      if key == "-1"
+      then self.custom:SetDisabled(false);
+           self.custom:SetFocus();
+           local customValue = self.custom:GetText();
+           if not customValue or customValue == ""
+           then self.custom:SetText("INV_Misc_QuestionMark");
+           end;
+           self.icon:SetIcon(self.custom:GetText());
+      else self.custom:SetDisabled(true);
+           self.icon:SetIcon();
+      end;
+    end;
+
+    local dropdown, custom = unpack(makeDropdown(msp .. "-icon", 0.95, 0.00, 0.95));
+
+    custom:SetCallback("OnEnterPressed", custom_OnEnterPressed);
+    custom.icon = preview[msp];
+
+    dropdown:SetCallback("OnValueChanged", dropdown_OnValueChanged);
+    dropdown.custom = custom;
+    dropdown.icon    = preview[msp];
+
+    left:AddChild(dropdown);
+    left:AddChild(custom);
+
+    items = makeMultiLine(msp .. "-text", 3);
+    for _, item in ipairs(items) do right:AddChild(item); end;
+
+  end;
+
+  for _, msp in ipairs(groupOrder) do createPreviewIcon(msp) end;
+
+  glancesGroup:SetFullWidth(true);
+  glancesGroup:SetFullHeight(true);
+  glancesGroup:SetLayout("Flow");
+
+  table.insert(widgets, glancesGroup);
+
+  glancesGroup:SelectGlance("PE1");
+
+  return widgets;
+end;
+
 local frameConstructor = 
 { 
       --  makeEditBox(msp, width, labelWidth)
       --  makeDropdown(msp, width, labelW, customW)
       --  makeColorfulEditBox(msp, width, labelWidth)
       --  makeMultiLine(msp, lines)
-      name       = function() return makeColorfulEditBox("NA", 0.75, 0.15     ) end,
+      --  makeIcon(msp, iconSize, iconWidth, dropdownWidth, customWidth)
+      --  makeInstruct(text)
 
+      instructBasics = function() return makeInstruct(L["Instruct Basics"]) end,
+      name       = function() return makeColorfulEditBox("NA", 0.75, 0.15     ) end,
       race       = function() return makeEditBox("RA", 0.85, 0.15            ) end,
       class      = function() return makeEditBox("RC", 0.85, 0.15            ) end,
-
       title      = function() return makeEditBox("NT", 0.85, 0.15            ) end,
       house      = function() return makeEditBox("NH", 0.35, 0.15             ) end,
-
       nickname   = function() return makeEditBox("NI", 0.35, 0.15             ) end,
-
       pronouns   = function() return makeDropdown("PN", 0.25, 0, 0.25       ) end,
       honorific  = function() return makeDropdown("PX", 0.25, 0, 0.20       ) end,
-
       motto      = function() return makeEditBox("MO", 0.85, 0.15             ) end,
-
       icon        = function() return makeIcon("IC", 50, 0.15, 0.30, 0.50    ) end, 
 
+      instructStatus = function() return makeInstruct(L["Instruct Status"]) end,
       rpStatus   = function() return makeDropdown("FC", 0.25, 0, 0.25       ) end,
       rpStyle    = function() return makeDropdown("FR", 0.25, 0, 0.25       ) end,
       currently  = function() return makeMultiLine("CU", 12, 0.5             ) end,
       oocInfo    = function() return makeMultiLine("CO", 12, 0.5             ) end,
 
+      instructAppearance = function() return makeInstruct(L["Instruct Appearance"]) end,
       eyes       = function() return makeColorfulEditBox("AE", 0.75, 0.15     ) end,
       height     = function() return makeEditBox("AH", 0.85, 0.15             ) end,
       weight     = function() return makeEditBox("AW", 0.85, 0.15            ) end,
       desc       = function() return makeMultiLine("DE", 12                 ) end,
 
+      instructBio = function() return makeInstruct(L["Instruct Bio"]) end,
       age        = function() return makeEditBox("AG", 0.85, 0.15             ) end,
       birthPlace = function() return makeEditBox("HB", 0.85, 0.15            ) end,
       home       = function() return makeEditBox("HH", 0.85, 0.15             ) end,
       history    = function() return makeMultiLine("HI", 12                  ) end,
 
+      instructGlance = function() return makeInstruct(L["Instruct Glance"]) end,
+      glances = function() return makeGlances() end,
 };
 
 Editor.tabGroup = AceGUI:Create("TabGroup");
@@ -1183,9 +1480,10 @@ RP_Identity.configButton:SetScript("OnShow",
 local editorTooltipsCheckbox = CreateFrame("Checkbutton", nil, Editor.frame, "ChatConfigCheckButtonTemplate");
 editorTooltipsCheckbox:ClearAllPoints();
 editorTooltipsCheckbox:SetSize(20,20);
-editorTooltipsCheckbox:SetPoint("TOPRIGHT", Editor.frame, "TOPRIGHT", -72, -48);
+editorTooltipsCheckbox:SetPoint("TOPRIGHT", Editor.frame, "TOPRIGHT", -72, -28);
 
 local function editorTooltipsTooltip()
+  if not RP_Identity.db.profile.config.editorTooltips then return end;
   GameTooltip:ClearLines();
   GameTooltip:SetOwner(editorTooltipsCheckbox, "ANCHOR_TOP");
   GameTooltip:AddLine(L["Config Editor Tooltips"]);
