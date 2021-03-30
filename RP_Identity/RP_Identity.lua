@@ -75,7 +75,32 @@ RP_Identity.addOnVersion = GetAddOnMetadata(addOnName, "Version");
 RP_Identity.addOnIcon    = maskIcon;
 RP_Identity.addOnColor   = { 51 / 255, 1, 85 / 255, 1 };
 
+local NUM_RACES = 37 + 10;
+
 local function notify(...) print("[" .. RP_Identity.addOnTitle .. "]", ...) end;
+
+local col = {};
+function col.gray(text)   return LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(text) end;
+function col.orange(text) return LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(text)    end;
+function col.white(text)  return WHITE_FONT_COLOR:WrapTextInColorCode(text) end;
+
+local ORANGE = LEGENDARY_ORANGE_COLOR:GenerateHexColor();
+local WHITE  = WHITE_FONT_COLOR:GenerateHexColor();
+
+local sortingMenu
+
+local function sortMenu(a, b)
+  local colorA, textA = sortingMenu[a]:match("^|c(ff%x%x%x%x%x%x)(.+)|r$")
+  local colorB, textB = sortingMenu[b]:match("^|c(ff%x%x%x%x%x%x)(.+)|r$")
+
+  if     colorA and not colorB then return true
+  elseif colorB and not colorA then return false
+  elseif not colorA and not colorB then return sortingMenu[a] < sortingMenu[b]
+  elseif colorA == colorB then return textA < textB
+  elseif colorA == ORANGE or colorA == WHITE then return true
+  else return textA < textB
+  end;
+end;
 
 local myDataBroker = 
         LibStub("LibDataBroker-1.1"):NewDataObject(
@@ -174,7 +199,6 @@ end;
 local me, realm;
 
 function RP_Identity:OnInitialize()
-            
 
       self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", myDefaults);
 
@@ -478,7 +502,7 @@ function RP_Identity:ResetIdentity()
   self:UpdateIdentity();
 end; 
 
-local function generatePE(self)
+local function computePE(self)
   local recordSeparator = "\n\n---\n\n"; -- who thought this up?
   local questionMark = "|TInterface\\Icons\\INV_Misc_QuestionMark:32:32|t";
   local glanceList = { "PE1", "PE2", "PE3", "PE4", "PE5" };
@@ -495,10 +519,11 @@ local function generatePE(self)
     end;
     table.insert(record, newline);
     table.insert(record, "#");
-    table.insert(record, title ~= "" and title or "...");
+    table.insert(record, title);
     table.insert(record, newline);
     table.insert(record, newline);
-    table.insert(record, text ~= "" and text   or "...");
+    table.insert(record, text);
+    table.insert(record, newline);
     return table.concat(record);
   end;
 
@@ -508,20 +533,20 @@ local function generatePE(self)
       local text   = self:GetMSP(glance .. "-text");
       local icon   = self:GetMSP(glance .. "-icon");
       local custom = self:GetMSP(glance .. "-icon-custom");
-      if not(title == "" and text == "" and icon == "" and custom == "")
+      if title ~= "" or text ~= "" or (icon == "-1" and custom ~= "") or (icon ~= "-1" and icon ~= "")
       then table.insert(holder, helper(title, text, icon, custom))
       end;
   end;
-  self:SetMSP("PE", table.concat(holder, recordSeparator));
+
+  return table.concat(holder, recordSeparator);
 end;
 
-RP_Identity.GeneratePE = generatePE;
 
 -- menu data
 --
 local menu =
 { FR =
-      { ["-1"] = L["Custom Style"],
+      { ["-1"] = col.orange(L["Custom Style"]),
         ["0" ] = L["Style Undefined"   ],
         ["1" ] = L["Normal"      ],
         ["2" ] = L["Casual"      ],
@@ -532,7 +557,7 @@ local menu =
   FROrder = { "0", "2", "1", "3", "4", "-1" },
 
   FC =
-      { ["-1"] = L["Custom Status"      ],
+      { ["-1"] = col.orange(L["Custom Status"      ]),
         ["0" ] = L["Status Undefined"          ],
         ["1" ] = L["Out of Character"   ],
         ["2" ] = L["In Character"       ],
@@ -543,7 +568,7 @@ local menu =
   FCOrder = { "0", "2", "1", "3", "4", "-1" },
 
   PN =
-      { [ "-1"                    ] = L["Custom Pronouns"   ],
+      { [ "-1"                    ] = col.orange(L["Custom Pronouns"   ]),
         [ ""                      ] = L["No Pronouns"       ],
         [ L["Pronouns She/Her"  ] ] = L["Pronouns She/Her"  ],
         [ L["Pronouns He/Him"   ] ] = L["Pronouns He/Him"   ],
@@ -556,23 +581,19 @@ local menu =
   },
 
   PX =
-      { ["-1"] = L["Custom Honorific"],
+      { ["-1"] = col.orange(L["Custom Honorific"]),
         [""  ] = L["No Honorific"    ],
       },
 
   PXOrder = { "", },
 
   IC =
-      { ["-1"          ] = L["Custom Icon"],
+      { ["-1"          ] = col.orange(L["Custom Icon"]),
         [""            ] = L["Undefined"  ],
         [maskIconNoPath] = L["rpIdentity Icon"],
       },
 
-  ICOrder = { "", maskIconNoPath },
-
-  PE = {},
-
-  PEOrder = {},
+  ICOrder = { "", maskIconNoPath, "-1" },
 
 };
 
@@ -752,11 +773,8 @@ class =
     ["DRUID"       ] = "ClassIcon_Druid",
     ["DEMONHUNTER" ] = "ClassIcon_DemonHunter",
   }, -- class
-glance = 
+popularIcons = 
   {
-    ["-1"                                      ] = L["Custom Icon"                             ] ,
-    [""                                        ] = L["Undefined"                               ] ,
-    [maskIconNoPath                            ] = L["rpIdentity Icon"                         ] ,
     ["70_inscription_steamy_romance_novel_kit" ] = L["70_inscription_steamy_romance_novel_kit" ] ,
     ["ability_bossashvane_icon02"              ] = L["ability_bossashvane_icon02"              ] ,
     ["ability_deathknight_heartstopaura"       ] = L["ability_deathknight_heartstopaura"       ] ,
@@ -790,33 +808,62 @@ glance =
 };
 
 -- iconDB
---
+
 local localizedRace,  playerRace  = UnitRace("player");
-local localizedClass, playerClass = UnitClass("player");
-
 local raceIcons = iconDB.race[playerRace];
-local classIcon = iconDB.class[playerClass];
-
+menu.IC[raceIcons[2]] = localizedRace .. L["Gender (Male)"];
+menu.IC[raceIcons[3]] = localizedRace .. L["Gender (Female)"];
 menu.IC[raceIcons[1]] = localizedRace .. L["Gender (Neutral)"];
+
 table.insert(menu.ICOrder, raceIcons[1]);
 
-if   raceIcons[3] ~= raceIcons[1]
-then menu.IC[raceIcons[3]] = localizedRace .. L["Gender (Female)"];
-     table.insert(menu.ICOrder, raceIcons[3]);
-end;
+if raceIcons[1] ~= raceIcons[3] then table.insert(menu.ICOrder, raceIcons[3]); end;
+if raceIcons[1] ~= raceIcons[2] and raceIcons[2] ~= raceIcons[3] then table.insert(menu.ICOrder, raceIcons[2]); end;
 
-if   raceIcons[2] ~= raceIcons[1]
-then menu.IC[raceIcons[2]] = localizedRace .. L["Gender (Male)"];
-     table.insert(menu.ICOrder, raceIcons[2]);
-end;
-
+local localizedClass, playerClass = UnitClass("player");
+local classIcon = iconDB.class[playerClass];
 menu.IC[classIcon] = localizedClass;
 table.insert(menu.ICOrder, classIcon);
-table.insert(menu.ICOrder, "-1");
 
-for i = 1, 5 do menu["PE" .. i .. "-icon"] = iconDB.glance; end;
+for iconFile, iconDesc in pairs(iconDB.popularIcons)
+do  menu.IC[iconFile] = col.white(iconDesc);
+    table.insert(menu.ICOrder, iconFile)
+end;
+
+--[===[
+for className, classIcon in pairs(iconDB.class)
+do  if className ~= playerClass
+    then local localizedClassMale   = LOCALIZED_CLASS_NAMES_MALE[className];
+         local localizedClassFemale = LOCALIZED_CLASS_NAMES_FEMALE[className];
+         if localizedClassMale ~= localizedClassFemale
+         then menu.IC[classIcon] = col.gray(localizedClassFemale);
+              table.insert(menu.ICOrder, classIcon);
+
+              menu.IC[classIcon:lower()] = col.gray(localizedClassMale);
+              table.insert(menu.ICOrder, classIcon:lower());
+
+         else menu.IC[classIcon] = col.gray(localizedClassFemale);
+              table.insert(menu.ICOrder, classIcon);
+         end;
+    end;
+end;
 
 --     
+for raceID = 1, NUM_RACES
+do  local r = C_CreatureInfo.GetRaceInfo(raceID);
+    if r and iconDB.race[r.clientFileString] and r.clientFileString ~= playerRace
+    then local raceIcons = iconDB.race[r.clientFileString] 
+         menu.IC[raceIcons[1]] = col.gray(r.raceName .. L["Gender (Neutral)"]);
+         menu.IC[raceIcons[2]] = col.gray(r.raceName .. L["Gender (Male)"]);
+         menu.IC[raceIcons[3]] = col.gray(r.raceName .. L["Gender (Female)"]);
+         table.insert(menu.ICOrder, raceIcons[1]);
+         table.insert(menu.ICOrder, raceIcons[2]);
+         table.insert(menu.ICOrder, raceIcons[3]);
+    end;
+end;
+
+--]===]
+--
 -- editor
 --
 --
@@ -924,8 +971,6 @@ function Editor:SetMSP(msp, value)
       end;
 end;
 
-Editor.GeneratePE = generatePE;
-
 function Editor:ClearPending() 
   self.pending = {} 
    self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile())
@@ -935,9 +980,14 @@ function Editor:ApplyPending()
       for field, value in pairs(self.pending) 
       do RP_Identity:SetMSP(field, value); 
       end;
+      self:GeneratePE();
       self:ClearPending();
       RP_Identity:UpdateIdentity();
 end;
+
+Editor.ComputePE = computePE;
+
+function Editor:GeneratePE() self:SetMSP("PE", self:ComputePE()); end;
 
 local Cursor = {};
 
@@ -1049,7 +1099,15 @@ local function makeDropdown(msp, width, labelW, customW)
            custom:SetText(initialValue);
       end;
 
-      main:SetList(myMenu, menu[msp .. "Order"]);
+      local myOrder = menu[msp .. "Order"];
+
+      if not menu[msp .. "Sorted"]
+      then sortingMenu = myMenu;
+           table.sort(myOrder, sortMenu)
+           menu[msp .. "Sorted"] = true;
+      end;
+
+      main:SetList(myMenu, myOrder);
 
       main:SetCallback("OnValueChanged", 
                   function(self, event, key)
@@ -1179,7 +1237,6 @@ end;
 
 
 local function makeGlances()
-  local widgets = {};
   local preview = {};
   local groupOrder = { "PE1", "PE2", "PE3", "PE4", "PE5" };
   local glancesGroup = AceGUI:Create("SimpleGroup");
@@ -1220,14 +1277,11 @@ local function makeGlances()
 
     icon:SetCallback("OnClick", icon_OnClick);
     icon:SetIcon();
-    table.insert(widgets, icon);
     preview[msp] = icon;
 
   end;
 
   function glancesGroup:SelectGlance(msp)
-    local items;
-    glancesGroup.current = msp;
 
     self:ReleaseChildren();
 
@@ -1236,56 +1290,112 @@ local function makeGlances()
     heading:SetText(L["Label " .. msp]);
     self:AddChild(heading);
 
-    items = makeEditBox(msp .. "-title", 0.85, 0.15);
-    for _, item in ipairs(items) do self:AddChild(item); end;
+    local titleLabel = makeLabel(msp .. "-title", 0.15);
+    self:AddChild(titleLabel);
 
-    local left = AceGUI:Create("SimpleGroup");
-    local middle = AceGUI:Create("Label");
-    local right = AceGUI:Create("SimpleGroup");
+    local title = AceGUI:Create("EditBox");
+    fixEditBox(title);
+    title:SetRelativeWidth(0.85);
+    title.MSP = msp .. "-title";
+    title:SetText(Editor:GetMSP(msp .. "-title"));
+    title:SetCallback("OnEnterPressed", 
+      function(self, event, text) 
+        Editor:SetMSP(self.MSP, text); 
+        Editor:GeneratePE();
+      end);
+    self:AddChild(titleLabel);
+
+    local left   = AceGUI:Create("SimpleGroup");
     left:SetRelativeWidth(0.45);
-    middle:SetRelativeWidth(0.05);
-    right:SetRelativeWidth(0.45);
     self:AddChild(left);
-    self:AddChild(middle);
-    self:AddChild(right);
+
+    -- local dropdown, custom = unpack(makeDropdown(msp .. "-icon", 0.95, 0.00, 0.95));
+    -- local function makeDropdown(msp, width, labelW, customW)
+    local custom = AceGUI:Create("EditBox");
+    fixEditBox(custom);
+
+    local iconPreview = preview[msp];
+
+    custom:SetRelativeWidth(0.95);
+    custom.MSP = msp .. "-icon";
+    custom.tooltipMSP = msp .. "-icon-custom";
+    custom:SetCallback("OnEnterPressed", 
+      function(self, event, text) 
+        Editor:SetMSP(self.MSP, text) 
+        Editor:GeneratePE();
+        iconPreview:SetIcon()
+      end);
+    left:AddChild(custom);
+      
+    local dropdown = AceGUI:Create("Dropdown");
+    dropdown:SetRelativeWidth(0.95);
+    dropdown.MSP = msp .. "-icon";
+    dropdown:SetCallback("OnEnter", showTooltip);
+    dropdown:SetCallback("OnLeave", hideTooltip);
+
+    local myMenu = menu.IC;
+    local myOrder = menu.ICOrder;
+
+    if not menu.ICSorted
+    then sortingMenu = myMenu;
+         table.sort(myOrder, sortMenu)
+         menu.ICSorted = true;
+    end;
+
+    local initialValue = Editor:GetMSP(msp .. "-icon");
     
-    local function custom_OnEnterPressed(self, event, text)
-      Editor:SetMSP(self.MSP, text) 
-      Editor:GeneratePE();
-      self.icon:SetIcon()
+    if   myMenu[initialValue]
+    then dropdown:SetValue(initialValue);
+         dropdown:SetText(myMenu[initialValue]);
+         custom:SetDisabled(true); 
+    else dropdown:SetValue("-1"); 
+         dropdown:SetText(myMenu["-1"]);
+         custom:SetDisabled(false); 
+         custom:SetText(initialValue);
     end;
 
-    local function dropdown_OnValueChanged(self, event, key)
-      Editor:SetMSP(self.MSP, key);
-      Editor:GeneratePE();
-      if key == "-1"
-      then self.custom:SetDisabled(false);
-           self.custom:SetFocus();
-           local customValue = self.custom:GetText();
-           if not customValue or customValue == ""
-           then self.custom:SetText("INV_Misc_QuestionMark");
-           end;
-           self.icon:SetIcon(self.custom:GetText());
-      else self.custom:SetDisabled(true);
-           self.icon:SetIcon();
-      end;
-    end;
+    dropdown:SetList(myMenu, myOrder);
 
-    local dropdown, custom = unpack(makeDropdown(msp .. "-icon", 0.95, 0.00, 0.95));
-
-    custom:SetCallback("OnEnterPressed", custom_OnEnterPressed);
-    custom.icon = preview[msp];
-
-    dropdown:SetCallback("OnValueChanged", dropdown_OnValueChanged);
-    dropdown.custom = custom;
-    dropdown.icon   = preview[msp];
+    dropdown:SetCallback("OnValueChanged", 
+      function(self, event, key)
+        Editor:SetMSP(self.MSP, key);
+        Editor:GeneratePE();
+        if key == "-1"
+        then custom:SetDisabled(false);
+             custom:SetFocus();
+             icon:SetIcon(self.custom:GetText());
+        else custom:SetDisabled(true);
+             iconPreview:SetIcon();
+        end
+      end);
 
     left:AddChild(dropdown);
-    left:AddChild(custom);
+  
+    local middle = AceGUI:Create("Label");
+    middle:SetRelativeWidth(0.05);
+    self:AddChild(middle);
 
-    items = makeMultiLine(msp .. "-text", 3);
-    for _, item in ipairs(items) do right:AddChild(item); end;
+    local right = AceGUI:Create("SimpleGroup");
+    right:SetRelativeWidth(0.45);
+    self:AddChild(right);
 
+    -- items = makeMultiLine(msp .. "-text", 3);
+    -- local function makeMultiLine(msp, lines, width)
+    local textbox = AceGUI:Create("MultiLineEditBox");
+    textbox:SetLabel(L["Label " .. msp .. "-text"]);
+    textbox:SetNumLines(2);
+    textbox:SetFullWidth(true);
+    textbox.MSP = msp .. "-text";
+    textbox:SetCallback("OnEnter", showTooltip);
+    textbox:SetCallback("OnLeave", hideTooltip);
+    textbox:SetText( Editor:GetMSP(msp) );
+    textbox:SetCallback("OnEnterPressed", 
+      function(self, event, text) 
+        Editor:SetMSP(self.MSP, text); 
+        Editor:GeneratePE();
+      end);
+
+    right:AddChild(textBox)
   end;
 
   for _, msp in ipairs(groupOrder) do createPreviewIcon(msp) end;
@@ -1293,10 +1403,13 @@ local function makeGlances()
   glancesGroup:SetFullWidth(true);
   glancesGroup:SetFullHeight(true);
   glancesGroup:SetLayout("Flow");
-
-  table.insert(widgets, glancesGroup);
-
   glancesGroup:SelectGlance("PE1");
+
+  local widgets = { };
+  for mspId, iconPreview in pairs(preview)
+  do  table.insert(widgets, iconPreview);
+  end;
+  table.insert(widgets, glancesGroup);
 
   return widgets;
 end;
