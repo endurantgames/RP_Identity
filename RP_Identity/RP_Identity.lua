@@ -144,12 +144,19 @@ local function setAutoSave(info, value)
   RP_Identity.closeButton:SetShown(value);
 end;
 
+local realm = GetNormalizedRealmName();
+local me = UnitName("player") .. "-" .. realm;
+
 function RP_Identity:OnInitialize()
             
       self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", myDefaults);
 
       function self:UpdateIdentity()
-            for  field, value in pairs(self.db.profile.myMSP) do msp.my[field] = value; end;
+            print("me is", me);
+            for  field, value in pairs(self.db.profile.myMSP) 
+            do   msp.my[field] = value; 
+                 msp.char[me].field[field] = value;
+            end;
             if self.Editor:IsShown() then self.Editor:ReloadTab(); end;
             msp:Update();
       end;
@@ -326,6 +333,8 @@ function RP_Identity:OnInitialize()
           self.addOnTitle, 
           self.options
       );
+
+      self:UpdateIdentity();
 end;
 
 -- data broker
@@ -366,7 +375,7 @@ tinsert(msp.callback.received, RP_Identity.mspRequestNotifier);
 function RP_Identity:MouseoverRequestProfile(event)
   if self.db.profile.config.mouseoverRequest and UnitIsPlayer("mouseover")
   then local name, server = UnitFullName("mouseover");
-       local playerName = name .. "-" .. (server or GetRealmName());
+       local playerName = name .. "-" .. (server or realm);
        msp:Request(playerName, ALL_FIELDS);
   end;
 end;
@@ -386,7 +395,7 @@ RP_Identity:RegisterEvent("CHAT_MSG_YELL",       "HearSomeoneRequestProfile");
 function RP_Identity:TargetRequestProfile(event)
   if self.db.profile.config.targetRequest and UnitIsPlayer("target")
   then local name, server = UnitFullName("target");
-       local playerName = name .. "-" .. (server or GetRealmName());
+       local playerName = name .. "-" .. (server or realm);
        msp:Request(playerName, ALL_FIELDS);
   end;
 end;
@@ -396,7 +405,7 @@ RP_Identity:RegisterEvent("PLAYER_TARGET_CHANGED", "TargetRequestProfile");
 function RP_Identity:FocusRequestProfile(event)
   if self.db.profile.config.focusRequest and UnitIsPlayer("focus")
   then local name, server = UnitFullName("focus")
-       local playerName = name .. "-" .. (server or GetRealmName())
+       local playerName = name .. "-" .. (server or realm);
        msp:Request(playerName, ALL_FIELDS);
   end;
 end;
