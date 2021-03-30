@@ -10,6 +10,7 @@ local Module        = RPTAGS.queue:GetModule(addOnName);
 
 Module:WaitUntil("UTILS_PARSE",
 function(self, event, ...)
+--[===[
   local pattern = "|T[^\n]+\\([^|:]+).-[\n]*#([^\n]+)[\n]*(.-)[\n]*%-%-%-[\n]*";
   local function parseMrpGlanceString(data) -- yoinked from mrp's code.
     local glances = {};
@@ -18,6 +19,27 @@ function(self, event, ...)
     end
     return glances;
   end;
-  
-  RPTAGS.utils.parse.mrpGlance = parseMrpGlanceString;
+--]===]
+  local function parseGlanceString(data)
+    local split = RPTAGS.utils.text.split;
+
+    local patternIcon = "XX^%s*|T[^\n]+\\" .. "([^\n|:]+)";
+    local patternTitle = "\n%s*#%s([^\n]+)\n";
+    local patternText = "#.-\n+(.+)$";
+
+    local found = {};
+
+    local glances = split(data, "\n+%-%-+\n+");
+    for _, glance in ipairs(glances)
+    do local icon = glance:match(patternIcon);
+       local title = glance:match(patternTitle);
+       local text = glance:match(patternText);
+       if icon or title or text
+       then table.insert(found, { icon = icon or RPTAGS.CONST.ICONS.ERROR, title = title or "", text = text or "" })
+       end;
+    end;
+    return found;
+  end;
+         
+  RPTAGS.utils.parse.mspGlance = parseGlanceString;
 end);

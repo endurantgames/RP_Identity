@@ -97,7 +97,10 @@ local function sortMenu(a, b)
   elseif colorB and not colorA then return false
   elseif not colorA and not colorB then return sortingMenu[a] < sortingMenu[b]
   elseif colorA == colorB then return textA < textB
-  elseif colorA == ORANGE or colorA == WHITE then return true
+  elseif colorA == ORANGE then return true
+  elseif colorB == ORANGE then return false
+  elseif colorA == WHITE then return true
+  elseif colorB == WHITE then return false
   else return textA < textB
   end;
 end;
@@ -202,6 +205,8 @@ function RP_Identity:OnInitialize()
 
       self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", myDefaults);
 
+      self:SendMessage("RP_IDENTITY_VARIABLES_LOADED");
+
       function self:UpdateIdentity()
             realm = GetNormalizedRealmName();
             me    = UnitName("player") .. "-" .. realm;
@@ -213,6 +218,7 @@ function RP_Identity:OnInitialize()
             msp:Update();
             self:SendMessage("RP_IDENTITY_UPDATE_IDENTITY");
       end;
+
 
       self.db.RegisterCallback(self, "OnProfileChanged", "UpdateIdentity");
       self.db.RegisterCallback(self, "OnProfileCopied",  "UpdateIdentity");
@@ -538,7 +544,9 @@ local function computePE(self)
       end;
   end;
 
-  return table.concat(holder, recordSeparator);
+  local glancesText = table.concat(holder, recordSeparator);
+  print(">>>", glancesText:gsub("|","||"));
+  return glancesText
 end;
 
 
@@ -1281,6 +1289,12 @@ local function makeGlances()
 
   end;
 
+  local widgets = { };
+  for _, msp in ipairs(groupOrder) do 
+      createPreviewIcon(msp) 
+      table.insert(widgets, preview[msp])
+  end;
+
   function glancesGroup:SelectGlance(msp)
 
     self:ReleaseChildren();
@@ -1303,7 +1317,7 @@ local function makeGlances()
         Editor:SetMSP(self.MSP, text); 
         Editor:GeneratePE();
       end);
-    self:AddChild(titleLabel);
+    self:AddChild(title);
 
     local left   = AceGUI:Create("SimpleGroup");
     left:SetRelativeWidth(0.45);
@@ -1379,8 +1393,6 @@ local function makeGlances()
     right:SetRelativeWidth(0.45);
     self:AddChild(right);
 
-    -- items = makeMultiLine(msp .. "-text", 3);
-    -- local function makeMultiLine(msp, lines, width)
     local textbox = AceGUI:Create("MultiLineEditBox");
     textbox:SetLabel(L["Label " .. msp .. "-text"]);
     textbox:SetNumLines(2);
@@ -1388,27 +1400,20 @@ local function makeGlances()
     textbox.MSP = msp .. "-text";
     textbox:SetCallback("OnEnter", showTooltip);
     textbox:SetCallback("OnLeave", hideTooltip);
-    textbox:SetText( Editor:GetMSP(msp) );
+    textbox:SetText( Editor:GetMSP(msp .. "-text") );
     textbox:SetCallback("OnEnterPressed", 
       function(self, event, text) 
         Editor:SetMSP(self.MSP, text); 
         Editor:GeneratePE();
       end);
 
-    right:AddChild(textBox)
+    right:AddChild(textbox)
   end;
-
-  for _, msp in ipairs(groupOrder) do createPreviewIcon(msp) end;
-
   glancesGroup:SetFullWidth(true);
   glancesGroup:SetFullHeight(true);
   glancesGroup:SetLayout("Flow");
   glancesGroup:SelectGlance("PE1");
 
-  local widgets = { };
-  for mspId, iconPreview in pairs(preview)
-  do  table.insert(widgets, iconPreview);
-  end;
   table.insert(widgets, glancesGroup);
 
   return widgets;

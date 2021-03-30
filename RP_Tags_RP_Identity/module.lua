@@ -7,7 +7,19 @@
 local addOnName, ns = ...;
 local RPTAGS        = RPTAGS;
 local Module        = RPTAGS.queue:NewModule(addOnName, "rpClient");
+local AceEvent = LibStub("AceEvent-3.0");
 
+
+AceEvent.RegisterMessage(RP_Identity, "RP_IDENTITY_VARIABLES_LOADED",
+  function(self, event, ...)
+    if RP_Identity.db.profile.myMSP.VA
+    and not RP_Identity.db.profile.msp.my.VA:match(RPTAGS.metadata.Title)
+    then RP_Identity.db.profile.myMSP.VA =
+         RPTAGS.metadata.Title .. "/" .. RPTAGS.metadata.Version .. " + " ..
+         RP_Identity.db.profile.myMSP.VA
+    end;
+  end);
+    
 Module:WaitUntil("ADDON_LOAD",
 function(self, event, ...)
     local getUnitID = RPTAGS.utils.get.core.unitID;
@@ -19,11 +31,10 @@ function(self, event, ...)
    end
 );
 
+
 Module:WaitUntil("MODULE_D",
 function(self, event, ...)
-  local AceEvent = LibStub("AceEvent-3.0");
-  AceEvent.RegisterMessage(self, "RP_IDENTITY_UPDATE_IDENTITY",
-    function(self, event, ...) RPTAGS.utils.frames.refreshAll() end);
+  AceEvent.RegisterMessage(self, "RP_IDENTITY_UPDATE_IDENTITY", function(self, event, ...) RPTAGS.utils.frames.refreshAll() end);
 end);
 
 Module:WaitUntil("MODULE_C",

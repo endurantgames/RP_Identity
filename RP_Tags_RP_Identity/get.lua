@@ -424,7 +424,7 @@ function(self, event, ...)
       local showTitle, showText, showIcon = args.title or args.all, args.text or args.all, args.icon or args.all;
       local unitID         = getUnitID(u);      if not unitID  then return "" end;
       local glances        = getField(u, "PE"); if not glances then return "" end; 
-      glances              = RPTAGS.utils.parse.mrpGlance(glances);           -- { { icon = icon, title = title, text = text }+ }
+      glances              = RPTAGS.utils.parse.mspGlance(glances);           -- { { icon = icon, title = title, text = text }+ }
       RPTAGS.cache.glances = glances;
       local delimiter      = Config.get("GLANCE_DELIM"); 
       local separator      = Config.get("GLANCE_COLON");
