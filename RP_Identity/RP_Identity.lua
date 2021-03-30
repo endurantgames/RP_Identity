@@ -62,9 +62,12 @@ msp:AddFieldsToTooltip("CO", "RC", "IC", "PN", "PE")
 local L = LibStub("AceLocale-3.0"):GetLocale(addOnName);
 local AceGUI = LibStub("AceGUI-3.0");
 
-local RP_Identity = LibStub("AceAddon-3.0"):NewAddon( addOnName, "AceConsole-3.0", "AceEvent-3.0"
-                      -- , "AceTimer-3.0"
-                      );
+local RP_Identity = LibStub("AceAddon-3.0"):NewAddon( 
+        addOnName, 
+        "AceConsole-3.0", 
+        "AceEvent-3.0"
+        -- , "AceTimer-3.0"
+      );
 
 local maskIcon = "Interface\\ICONS\\Ability_Racial_Masquerade.PNG";
 local maskIconNoPath = "Ability_Racial_Masquerade.PNG";
@@ -87,6 +90,7 @@ function col.white(text)  return WHITE_FONT_COLOR:WrapTextInColorCode(text) end;
 local ORANGE = LEGENDARY_ORANGE_COLOR:GenerateHexColor();
 local WHITE  = WHITE_FONT_COLOR:GenerateHexColor();
 
+local forwardArrow = "|A:common-icon-forwardarrow:0|a";
 local sortingMenu
 
 local function sortMenu(a, b)
@@ -106,90 +110,89 @@ local function sortMenu(a, b)
 end;
 
 local myDataBroker = 
-        LibStub("LibDataBroker-1.1"):NewDataObject(
-            RP_Identity.addOnTitle,
-            { type    = "data source",
-              text    = RP_Identity.addOnTitle,
-              icon    = maskIcon,
-              OnClick = function() RP_Identity:ToggleEditorFrame() end,
-            }
-        );
+  LibStub("LibDataBroker-1.1"):NewDataObject(
+    RP_Identity.addOnTitle,
+    { type    = "data source",
+    text    = RP_Identity.addOnTitle,
+    icon    = maskIcon,
+    OnClick = function() RP_Identity:ToggleEditorFrame() end,
+    }
+ );
         
 local myDBicon = LibStub("LibDBIcon-1.0");
 
 local myDefaults =
-      { profile =
-            { config =
-                  { showIcon = true, 
-                    lockFrame = false,
-                    saveDimensions = false,
-                    notifyProfile = false,
-                    autoRequest = true,
-                    mouseoverRequest = true,
-                    hearSomeone = false,
-                    partyRequest = true,
-                    raidRequest = false,
-                    targetRequest = true,
-                    focusRequest = true,
-                    editorTooltips = true,
-                    autoSave = false,
-                    tooltipsFadeOut = true,
-                  },
-              myMSP =
-                  { 
-                        AE = "",
-                        AG = "",
-                        AH = "",
-                        AW = "",
-                        CO = "",
-                        CU = "",
-                        DE = "",
-                        FC = "0",
-                        FR = "0",
-                        HB = "",
-                        HI = "",
-                        IC = maskIconNoPath,
-                        HO = "",
-                        MO = "",
-                        NA = UnitName("player"),
-                        NH = "",
-                        NI = "",
-                        NT = "",
-                        PN = "",
-                        PX = "",
-                        RA = UnitRace("player"),
-                        RC = UnitClass("player"),
-                        VA = RP_Identity.addOnTitle .. "/" .. RP_Identity.addOnVersion,
-                        VP = "1",
-                        -- TR = IsTrialAccount() and "1" or "0",
-                        -- GC = UnitClass("player"),
-                        -- GF = UnitFactionGroup("player") .. "",
-                        -- GR = UnitRace("player"),
-                        -- GS = UnitSex("player") .. "",
-                        -- GU = UnitGUID("player"),
-                        ["PE1-icon"] = "",
-                        ["PE1-title"] = "",
-                        ["PE1-text"] = "",
-                        ["PE1-icon-custom"] = "",
-                        ["PE2-icon"] = "",
-                        ["PE2-title"] = "",
-                        ["PE2-text"] = "",
-                        ["PE2-icon-custom"] = "",
-                        ["PE3-icon"] = "",
-                        ["PE3-title"] = "",
-                        ["PE3-text"] = "",
-                        ["PE3-icon-custom"] = "",
-                        ["PE4-icon"] = "",
-                        ["PE4-title"] = "",
-                        ["PE4-text"] = "",
-                        ["PE4-icon-custom"] = "",
-                        ["PE5-icon"] = "",
-                        ["PE5-title"] = "",
-                        ["PE5-text"] = "",
-                        ["PE5-icon-custom"] = "",
-                  },
-            },
-      };
+{ profile =
+  { config =
+    { showIcon             = true,
+      lockFrame            = false,
+      saveDimensions       = false,
+      notifyProfile        = false,
+      autoRequest          = true,
+      mouseoverRequest     = true,
+      hearSomeone          = false,
+      partyRequest         = true,
+      raidRequest          = false,
+      targetRequest        = true,
+      focusRequest         = true,
+      editorTooltips       = true,
+      autoSave             = false,
+      tooltipsFadeOut      = true,
+    },
+    myMSP =
+    { -- GC                = UnitClass("player"),
+      -- GF                = UnitFactionGroup("player") .. "",
+      -- GR                = UnitRace("player"),
+      -- GS                = UnitSex("player") .. "",
+      -- GU                = UnitGUID("player"),
+      -- TR                = IsTrialAccount() and "1" or "0",
+      AE                   = "",
+      AG                   = "",
+      AH                   = "",
+      AW                   = "",
+      CO                   = "",
+      CU                   = "",
+      DE                   = "",
+      FC                   = "0",
+      FR                   = "0",
+      HB                   = "",
+      HI                   = "",
+      HO                   = "",
+      IC                   = maskIconNoPath,
+      MO                   = "",
+      NA                   = UnitName("player"),
+      NH                   = "",
+      NI                   = "",
+      NT                   = "",
+      PN                   = "",
+      PX                   = "",
+      RA                   = UnitRace("player"),
+      RC                   = UnitClass("player"),
+      VA                   = RP_Identity.addOnTitle .. "/" .. RP_Identity.addOnVersion,
+      VP                   = "1",
+      ["PE1-icon"        ] = "",
+      ["PE1-icon-custom" ] = "",
+      ["PE1-text"        ] = "",
+      ["PE1-title"       ] = "",
+      ["PE2-icon"        ] = "",
+      ["PE2-icon-custom" ] = "",
+      ["PE2-text"        ] = "",
+      ["PE2-title"       ] = "",
+      ["PE3-icon"        ] = "",
+      ["PE3-icon-custom" ] = "",
+      ["PE3-text"        ] = "",
+      ["PE3-title"       ] = "",
+      ["PE4-icon"        ] = "",
+      ["PE4-icon-custom" ] = "",
+      ["PE4-text"        ] = "",
+      ["PE4-title"       ] = "",
+      ["PE5-icon"        ] = "",
+      ["PE5-icon-custom" ] = "",
+      ["PE5-text"        ] = "",
+      ["PE5-title"       ] = "",
+    },
+  },
+};
 
 local function setAutoSave(info, value)
   if value then RP_Identity.Editor:ApplyPending(); end;
@@ -202,220 +205,208 @@ end;
 local me, realm;
 
 function RP_Identity:OnInitialize()
-
-      self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", myDefaults);
-
-      function self:UpdateIdentity()
-            realm = GetNormalizedRealmName();
-            me    = UnitName("player") .. "-" .. realm;
-            for  field, value in pairs(self.db.profile.myMSP) 
-            do   print("copying", field);
-                 msp.my[field]             = value; 
-                 msp.char[me].field[field] = value;
-            end;
-            if self.Editor:IsShown() then self.Editor:ReloadTab(); end;
-            msp:Update();
-            self:SendMessage("RP_IDENTITY_UPDATE_IDENTITY");
-      end;
-
-
-      self.db.RegisterCallback(self, "OnProfileChanged", "UpdateIdentity");
-      self.db.RegisterCallback(self, "OnProfileCopied",  "UpdateIdentity");
-      self.db.RegisterCallback(self, "OnProfileReset",   "UpdateIdentity");
-
-      self.options        =
-         { type           = "group",
-           name           = RP_Identity.addOnTitle,
-           order          = 1,
-           args           =
-           { versionInfo =
-             { type = "description",
-               name = L["Version Info"],
-               order = 1,
-             },
-             support =
-            { type = "group",
-              name = L["Support Header"],
-              order = 3,
-              args =
-              { supportHeader =
-                { type = "description",
-                  fontSize = "medium",
-                  name = "|cffffff00" .. L["Support Header"] .. "|r",
-                  order = 4,
-               },
-               supportInfo =
-                { type = "description",
-                  name = L["Support Info"],
-                  order = 5,
-                },
-              },
+    
+  self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", myDefaults);
+    
+  function self:UpdateIdentity()
+    realm = GetNormalizedRealmName();
+    me    = UnitName("player") .. "-" .. realm;
+    for  field, value in pairs(self.db.profile.myMSP) 
+    do   msp.my[field]             = value; 
+         msp.char[me].field[field] = value;
+    end;
+    if self.Editor:IsShown() then self.Editor:ReloadTab(); end;
+       msp:Update();
+       self:SendMessage("RP_IDENTITY_UPDATE_IDENTITY");
+  end;
+    
+  self.db.RegisterCallback(self, "OnProfileChanged", "UpdateIdentity");
+  self.db.RegisterCallback(self, "OnProfileCopied",  "UpdateIdentity");
+  self.db.RegisterCallback(self, "OnProfileReset",   "UpdateIdentity");
+  
+  self.options               =
+  { type                     = "group",
+    name                     = RP_Identity.addOnTitle,
+    order                    = 1,
+    args                     =
+    { versionInfo            =
+      { type                 = "description",
+        name                 = L["Version Info"],
+        order                = 1,
+      },
+      support                =
+     { type                  = "group",
+       name                  = L["Support Header"],
+       order                 = 3,
+       args                  =
+       { supportHeader       =
+         { type              = "description",
+           fontSize          = "medium",
+           name              = "|cffffff00" .. L["Support Header"] .. "|r",
+           order             = 4,
+        },
+        supportInfo          =
+         { type              = "description",
+           name              = L["Support Info"],
+           order             = 5,
+         },
+       },
+     },
+      configOptions          =
+      { type                 = "group",
+        name                 = L["Config Options"],
+        order                = 1,
+        args                 =
+        { showIcon           =
+          { name             = L["Config Show Icon"],
+            type             = "toggle",
+            order            = 1,
+            desc             = L["Config Show Icon Tooltip"],
+            get              = function() return self.db.profile.config.showIcon end,
+            set              = "ToggleMinimapIcon",
+            width            = 1.5,
+          },
+          notifyProfileSent  =
+          { name             = L["Config Notify Profile Sent"],
+            type             = "toggle",
+            order            = 2,
+            desc             = L["Config Notify Profile Sent Tooltip"],
+            get              = function() return self.db.profile.config.notifyProfile end,
+            set              = function(info, value) self.db.profile.config.notifyProfile = value end,
+            width            = 1.5,
+          },
+          autoRequest        =
+          { name             = L["Config Auto-Request Profiles"],
+            type             = "toggle",
+            order            = 3,
+            desc             = L["Config Auto-Request Profiles Tooltip"],
+            get              = function() return self.db.profile.config.autoRequest end,
+            set              = function(info, value) self.db.profile.config.autoRequest = value end,
+            width            = 1.5,
+          },
+          mouseoverRequest   =
+          { name             = L["Config Mouseover Request"],
+            type             = "toggle",
+            order            = 4,
+            desc             = L["Config Mouseover Request Tooltip"],
+            get              = function() return self.db.profile.config.mouseoverRequest end,
+            set              = function(info, value) self.db.profile.config.mouseoverRequest = value end,
+                width        = 1.5,
+          },
+          hearSomeoneRequest =
+          { name             = L["Config Hear Someone Request"],
+            type             = "toggle",
+            order            = 5,
+            desc             = L["Config Hear Someone Request Tooltip"],
+            get              = function() return self.db.profile.config.hearSomeone end,
+            set              = function(info, value) self.db.profile.config.hearSomeone = value end,
+            width            = 1.5,
+          },
+          targetRequest      =
+          { name             = L["Config Target Request"],
+            type             = "toggle",
+            order            = 6,
+            desc             = L["Config Target Request Tooltip"],
+            get              = function() return self.db.profile.config.targetRequest end,
+            set              = function(info, value) self.db.profile.config.targetRequest = value end,
+            width            = 1.5,
+          },
+          focusRequest       =
+          { name             = L["Config Focus Request"],
+            type             = "toggle",
+            order            = 7,
+            desc             = L["Config Focus Request Tooltip"],
+            get              = function() return self.db.profile.config.focusRequest end,
+            set              = function(info, value) self.db.profile.config.focusRequest = value end,
+            width            = 1.5,
+          },
+          partyRequest       =
+          { name             = L["Config Party Request"],
+            type             = "toggle",
+            order            = 8,
+            desc             = L["Config Party Request Tooltip"],
+            get              = function() return self.db.profile.config.partyRequest end,
+            set              = function(info, value) self.db.profile.config.partyRequest = value end,
+            width            = 1.5,
+          },
+          raidRequest        =
+          { name             = L["Config Raid Request"],
+            type             = "toggle",
+            order            = 9,
+            desc             = L["Config Raid Request Tooltip"],
+            get              = function() return self.db.profile.config.raidRequest end,
+            set              = function(info, value) self.db.profile.config.raidRequest = value end,
+            width            = 1.5,
+          },
+          autoSave           =
+          { name             = L["Config Auto Save"],
+            type             = "toggle",
+            order            = 10,
+            desc             = L["Config Auto Save"],
+            get              = function() return self.db.profile.config.autoSave end,
+            set              = setAutoSave,
+          },
+          tooltipsFadeOut    =
+          { name             = L["Config Tooltips Fade Out"],
+            type             = "toggle",
+            order            = 11,
+            desc             = L["Config Tooltips Fade Out Tooltip"],
+            get              = function() return self.db.profile.config.tooltipsFadeOut end,
+            set              = function(info, value) self.db.profile.config.tooltipsFadeOut = value end,
+          },
+        },
+      },
+      profiles               = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db),
+      credits                =
+        { type               = "group",
+          name               = L["Credits Header"],
+          order              = 10,
+          args               =
+          {
+            creditsHeader    =
+            { type           = "description",
+              name           = "|cffffff00" .. L["Credits Header"] .. "|r",
+              order          = 2,
+              fontSize       = "medium",
             },
-             configOptions       =
-             { type       = "group",
-               name       = L["Config Options"],
-               order      = 1,
-               args       =
-               { showIcon =
-                 { name   = L["Config Show Icon"],
-                   type   = "toggle",
-                   order  = 1,
-                   desc   = L["Config Show Icon Tooltip"],
-                   get    = function() return self.db.profile.config.showIcon end,
-                   set    = "ToggleMinimapIcon",
-                   width  = 1.5,
-                 },
-                 notifyProfileSent =
-                 { name = L["Config Notify Profile Sent"],
-                   type = "toggle",
-                   order = 2,
-                   desc = L["Config Notify Profile Sent Tooltip"],
-                   get = function() return self.db.profile.config.notifyProfile end,
-                   set = function(info, value) self.db.profile.config.notifyProfile = value end,
-                   width = 1.5,
-                 },
-                 autoRequest =
-                 { name = L["Config Auto-Request Profiles"],
-                   type = "toggle",
-                   order = 3,
-                   desc = L["Config Auto-Request Profiles Tooltip"],
-                   get = function() return self.db.profile.config.autoRequest end,
-                   set = function(info, value) self.db.profile.config.autoRequest = value end,
-                   width = 1.5,
-                 },
-                 mouseoverRequest =
-                 { name = L["Config Mouseover Request"],
-                   type = "toggle",
-                   order = 4,
-                   desc = L["Config Mouseover Request Tooltip"],
-                   get = function() return self.db.profile.config.mouseoverRequest end,
-                   set = function(info, value) self.db.profile.config.mouseoverRequest = value end,
-                       width = 1.5,
-                 },
-                 hearSomeoneRequest =
-                 { name = L["Config Hear Someone Request"],
-                   type = "toggle",
-                   order = 5,
-                   desc = L["Config Hear Someone Request Tooltip"],
-                   get = function() return self.db.profile.config.hearSomeone end,
-                   set = function(info, value) self.db.profile.config.hearSomeone = value end,
-                   width = 1.5,
-                 },
-                 targetRequest =
-                 { name = L["Config Target Request"],
-                   type = "toggle",
-                   order = 6,
-                   desc = L["Config Target Request Tooltip"],
-                   get = function() return self.db.profile.config.targetRequest end,
-                   set = function(info, value) self.db.profile.config.targetRequest = value end,
-                   width = 1.5,
-                 },
-                 focusRequest =
-                 { name = L["Config Focus Request"],
-                   type = "toggle",
-                   order = 7,
-                   desc = L["Config Focus Request Tooltip"],
-                   get = function() return self.db.profile.config.focusRequest end,
-                   set = function(info, value) self.db.profile.config.focusRequest = value end,
-                   width = 1.5,
-                 },
-                 partyRequest =
-                 { name = L["Config Party Request"],
-                   type = "toggle",
-                   order = 8,
-                   desc = L["Config Party Request Tooltip"],
-                   get = function() return self.db.profile.config.partyRequest end,
-                   set = function(info, value) self.db.profile.config.partyRequest = value end,
-                   width = 1.5,
-                 },
-                 raidRequest =
-                 { name = L["Config Raid Request"],
-                   type = "toggle",
-                   order = 9,
-                   desc = L["Config Raid Request Tooltip"],
-                   get = function() return self.db.profile.config.raidRequest end,
-                   set = function(info, value) self.db.profile.config.raidRequest = value end,
-                   width = 1.5,
-                 },
-                 autoSave =
-                 { name = L["Config Auto Save"],
-                   type = "toggle",
-                   order = 10,
-                   desc = L["Config Auto Save"],
-                   get = function() return self.db.profile.config.autoSave end,
-                   set = setAutoSave,
-                 },
-                 tooltipsFadeOut =
-                 { name = L["Config Tooltips Fade Out"],
-                   type = "toggle",
-                   order = 11,
-                   desc = L["Config Tooltips Fade Out Tooltip"],
-                   get = function() return self.db.profile.config.tooltipsFadeOut end,
-                   set = function(info, value) self.db.profile.config.tooltipsFadeOut = value end,
-                 },
-               },
-             },
-             profiles     = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db),
-             credits =
-               { type = "group",
-                 name = L["Credits Header"],
-                 order = 10,
-                 args =
-                 {
-                   creditsHeader =
-                   { type = "description",
-                     name = "|cffffff00" .. L["Credits Header"] .. "|r",
-                     order = 2,
-                     fontSize = "medium",
-                   },
-                   creditsInfo =
-                   { type = "description",
-                     name = L["Credits Info"],
-                     order = 3,
-                   },
-                },
-              },
-           },
-         };
-      
-      myDBicon:Register(RP_Identity.addOnTitle, myDataBroker, RP_Identity.db.profile.config.ShowIcon);
+            creditsInfo      =
+            { type           = "description",
+              name           = L["Credits Info"],
+              order          = 3,
+            },
+         },
+       },
+    },
+  };
 
-      self:RegisterChatCommand("rpidicon", "ToggleMinimapIcon");
-
-      LibStub("AceConfig-3.0"):RegisterOptionsTable(
-          self.addOnName,                  
-          self.options
-      );
-      LibStub("AceConfigDialog-3.0"):AddToBlizOptions(    
-          self.addOnName, 
-          self.addOnTitle, 
-          self.options
-      );
-
-      self:SendMessage("RP_IDENTITY_READY");
-      self:UpdateIdentity();
+  myDBicon:Register(RP_Identity.addOnTitle, myDataBroker, RP_Identity.db.profile.config.ShowIcon);
+  self:RegisterChatCommand("rpidicon", "ToggleMinimapIcon");
+  LibStub("AceConfig-3.0"):RegisterOptionsTable( self.addOnName, self.options);
+  LibStub("AceConfigDialog-3.0"):AddToBlizOptions(self.addOnName, self.addOnTitle, self.options);
+  self:SendMessage("RP_IDENTITY_READY");
+  self:UpdateIdentity();
 end;
 
 -- data broker
 --
 function RP_Identity:ToggleMinimapIcon()
-      self.db.profile.config.showIcon = not self.db.profile.config.showIcon;
-      if self.db.profile.config.showIcon then myDBicon:Show() else myDBicon:Hide(); end;
+  self.db.profile.config.showIcon = not self.db.profile.config.showIcon;
+  if self.db.profile.config.showIcon then myDBicon:Show() else myDBicon:Hide(); end;
 end;
 
 function RP_Identity:ToggleEditorFrame() 
-      if self.Editor
-      then if   self.Editor:IsShown() 
-           then self.Editor:Hide()
-           else self.Editor:ReloadTab(); self.Editor:Show()
-           end;
-      end;
+  if self.Editor
+  then if   self.Editor:IsShown() 
+       then self.Editor:Hide()
+       else self.Editor:ReloadTab(); self.Editor:Show()
+       end;
+  end;
 end;
 
 _G[addOnName] = RP_Identity;
 
 function RP_Identity:OnLoad() 
-      self.Editor.tabGroup:SelectTab(groupOrder[1]);
+   self.Editor.tabGroup:SelectTab(groupOrder[1]);
 end;
 
 -- msp interactions
@@ -545,7 +536,6 @@ local function computePE(self)
   end;
 
   local glancesText = table.concat(holder, recordSeparator);
-  print(">>>", glancesText:gsub("|","||"));
   return glancesText
 end;
 
@@ -554,55 +544,41 @@ end;
 --
 local menu =
 { FR =
-      { ["-1"] = col.orange(L["Custom Style"]),
-        ["0" ] = L["Style Undefined"   ],
-        ["1" ] = L["Normal"      ],
-        ["2" ] = L["Casual"      ],
-        ["3" ] = L["Full-Time"   ],
-        ["4" ] = L["Beginner"    ],
-      },
-
-  FROrder = { "0", "2", "1", "3", "4", "-1" },
-
+  { ["-1"                   ] = col.orange(L["Custom Style"]),
+    ["0"                    ] = L["Style Undefined"   ],
+    ["1"                    ] = L["Normal"      ],
+    ["2"                    ] = L["Casual"      ],
+    ["3"                    ] = L["Full-Time"   ],
+    ["4"                    ] = L["Beginner"    ],
+  },
   FC =
-      { ["-1"] = col.orange(L["Custom Status"      ]),
-        ["0" ] = L["Status Undefined"          ],
-        ["1" ] = L["Out of Character"   ],
-        ["2" ] = L["In Character"       ],
-        ["3" ] = L["Looking for Contact"],
-        ["4" ] = L["Storyteller"        ],
-      },
-
-  FCOrder = { "0", "2", "1", "3", "4", "-1" },
-
+  { ["-1"                   ] = col.orange(L["Custom Status"      ]),
+    ["0"                    ] = L["Status Undefined"          ],
+    ["1"                    ] = L["Out of Character"   ],
+    ["2"                    ] = L["In Character"       ],
+    ["3"                    ] = L["Looking for Contact"],
+    ["4"                    ] = L["Storyteller"        ],
+  },
   PN =
-      { [ "-1"                    ] = col.orange(L["Custom Pronouns"   ]),
-        [ ""                      ] = L["No Pronouns"       ],
-        [ L["Pronouns She/Her"  ] ] = L["Pronouns She/Her"  ],
-        [ L["Pronouns He/Him"   ] ] = L["Pronouns He/Him"   ],
+  { [ "-1"                  ] = col.orange(L["Custom Pronouns"   ]),
+    [ ""                    ] = L["No Pronouns"       ],
+    [ L["Pronouns She/Her"] ] = L["Pronouns She/Her"  ],
+    [ L["Pronouns He/Him"]  ] = L["Pronouns He/Him"   ],
   },
-
-  PNOrder = 
-      { "", 
-        L["Pronouns She/Her"], 
-        L["Pronouns He/Him"], 
-  },
-
   PX =
-      { ["-1"] = col.orange(L["Custom Honorific"]),
-        [""  ] = L["No Honorific"    ],
-      },
-
-  PXOrder = { "", },
-
+  { ["-1"                   ] = col.orange(L["Custom Honorific"]),
+    [""                     ] = L["No Honorific"    ],
+  },
   IC =
-      { ["-1"          ] = col.orange(L["Custom Icon"]),
-        [""            ] = L["Undefined"  ],
-        [maskIconNoPath] = L["rpIdentity Icon"],
-      },
-
-  ICOrder = { "", maskIconNoPath, "-1" },
-
+  { ["-1"                   ] = col.orange(L["Custom Icon"]),
+    [""                     ] = L["Undefined"  ],
+    [maskIconNoPath         ] = L["rpIdentity Icon"],
+  },
+  ICOrder = { "", maskIconNoPath, "-1"                         },
+  PXOrder = { "",                                              },
+  PNOrder = { "", L["Pronouns She/Her"], L["Pronouns He/Him"], },
+  FCOrder = { "0", "2", "1", "3", "4", "-1"                    },
+  FROrder = { "0", "2", "1", "3", "4", "-1"                    },
 };
 
 local extraPronouns = L["Pronouns List"];
@@ -624,151 +600,103 @@ table.insert(menu.PXOrder, "-1");
 local ICONS = "Interface\\ICONS\\";
 local iconDB = 
 { 
-  race = {
-    
-    ["BloodElf"] = { 
+  race = 
+  { ["BloodElf"] = { 
       [1] = "inv_misc_tournaments_symbol_bloodelf",
       [2] = "achievement_character_bloodelf_male",
-      [3] = "achievement_character_bloodelf_female",
-    },
-
+      [3] = "achievement_character_bloodelf_female", },
     ["DarkIronDwarf"] = { 
       [1] = "inv_faction_alliancewarfront_round_darkirondwarf",
       [2] = "ability_racial_fireblood",
-      [3] = "ability_racial_foregedinflames",
-    },
-
+      [3] = "ability_racial_foregedinflames", },
     ["Draenei"] = {
       [1] = "inv_misc_tournaments_symbol_draenei",
       [2] = "achievement_character_draenei_male",
-      [3] = "achievement_character_draenei_female",
-    },
-
+      [3] = "achievement_character_draenei_female", }, 
     ["Dwarf"] = {
       [1] = "inv_misc_tournaments_symbol_dwarf",
       [2] = "achievement_character_dwarf_male",
-      [3] = "achievement_character_dwarf_female",
-    },
-
+      [3] = "achievement_character_dwarf_female", }, 
     ["Gnome"] = {
       [1] = "inv_misc_tournaments_symbol_gnome",
       [2] = "achievement_character_gnome_male",
-      [3] = "achievement_character_gnome_female",
-    },
-
+      [3] = "achievement_character_gnome_female", }, 
     ["Goblin"] = {
       [1] = "ability_racial_rocketjump",
       [2] = "achievement_goblinhead",
-      [3] = "achievement_femalegoblinhead",
-    },
-
+      [3] = "achievement_femalegoblinhead", }, 
     ["HighmountainTauren"] = {
       [1] = "inv_faction_hordewarfront_round_highmountaintauren",
       [2] = "ability_racial_bullrush",
-      [3] = "achievement_alliedrace_highmountaintauren",
-    },
-
+      [3] = "achievement_alliedrace_highmountaintauren", }, 
     ["Human"] = {
       [1] = "inf_misc_tournaments_symbol_human",
       [2] = "achievement_character_human_male",
-      [3] = "achievement_character_human_female",
-    },
-
+      [3] = "achievement_character_human_female", }, 
     ["KulTiran"] = {
       [1] = "inv_faction_alliancewarfront_round_proudmooreadmiralty",
       [2] = "achievement_boss_zuldazar_manceroy_mestrah",
-      [3] = "ability_racial_childofthesea",
-    },
-
+      [3] = "ability_racial_childofthesea", }, 
     ["LightforgedDraenei"] = {
       [1] = "inv_faction_alliancewarfront_round_lightforgeddraenei",
       [2] = "ability_racial_finalverdict",
-      [3] = "achievement_alliedrace_lightforgeddraenei",
-    },
-
+      [3] = "achievement_alliedrace_lightforgeddraenei", }, 
     ["MagharOrc"] = {
       [1] = "inv_faction_hordewarfront_round_magharorc",
       [2] = "achievement_character_orc_male_brn",
-      [3] = "achievement_character_orc_female_brn",
-    },
-
+      [3] = "achievement_character_orc_female_brn", }, 
     ["Mechagnome"] = {
       [1] = "inv_plate_mechagnome_c_01helm",
       [2] = "ability_racial_hyperorganiclightoriginator",
-      [3] = "inv_plate_mechagnome_c_01helm",
-    },
-
+      [3] = "inv_plate_mechagnome_c_01helm", }, 
     ["NightElf"] = {
       [1] = "inv_misc_tournaments_symbol_nightelf",
       [2] = "achievement_character_nightelf_male",
-      [3] = "achievement_character_nightelf_female",
-    },
-
+      [3] = "achievement_character_nightelf_female", }, 
     ["Nightborne"] = {
       [1] = "inv_faction_hordewarfront_round_nightborne",
       [2] = "ability_racial_dispelillusions",
-      [3] = "ability_racial_masquerade",
-    },
-
+      [3] = "ability_racial_masquerade", }, 
     ["Orc"] = {
       [1] = "inv_misc_tournaments_symbol_orc",
       [2] = "achievement_character_orc_male",
-      [3] = "achievement_character_orc_female",
-    },
-
+      [3] = "achievement_character_orc_female", }, 
     ["Pandaren"] = {
       [1] = "achievement_character_pandaren_female",
       [2] = "achievement_guild_classypanda",
-      [3] = "achievement_character_pandaren_female",
-    },
-
+      [3] = "achievement_character_pandaren_female", }, 
     ["Scourge"] = {
       [1] = "inv_misc_tournaments_symbol_scourge",
       [2] = "achievement_character_undead_male",
-      [3] = "achievement_character_undead_female",
-    },
-
+      [3] = "achievement_character_undead_female", }, 
     ["Tauren"] = {
       [1] = "inv_misc_tournaments_symbol_tauren",
       [2] = "achievement_character_tauren_male",
-      [3] = "achievement_character_tauren_female",
-    },
-
+      [3] = "achievement_character_tauren_female", }, 
     ["Troll"] = {
       [1] = "inv_misc_tournaments_symbol_troll",
       [2] = "achievement_character_troll_male",
-      [3] = "achievement_character_troll_female",
-    },
-
+      [3] = "achievement_character_troll_female", }, 
     ["VoidElf"] = {
       [1] = "inv_faction_alliancewarfront_round_voidelf",
       [2] = "ability_racial_entropicembrace",
-      [3] = "ability_racial_preturnaturalcalm",
-    },
-
+      [3] = "ability_racial_preturnaturalcalm", }, 
     ["Vulpera"] = {
       [1] = "ability_racial_fireresist",
       [2] = "ability_racial_nosefortrouble",
-      [3] = "ability_racial_nosefortrouble",
-    },
-
+      [3] = "ability_racial_nosefortrouble", }, 
     ["Worgen"] = {
       [1] = "ability_racial_twoforms",
       [2] = "achievement_worganhead",
-      [3] = "ability_racial_viciousness",
-    },
-
+      [3] = "ability_racial_viciousness", }, 
     ["ZandalariTroll"] = {
       [1] = "inv_faction_talanjisexpedition_round",
       [2] = "inv_zandalarimalehead",
-      [3] = "inv_zandalarifemalehead",
-    },
-    
+      [3] = "inv_zandalarifemalehead", }, 
   }, -- race
   
 class =
-  { 
-    ["WARRIOR"     ] = "ClassIcon_Warrior",
+  { ["WARRIOR"     ] = "ClassIcon_Warrior",
     ["PALADIN"     ] = "ClassIcon_Paladin",
     ["HUNTER"      ] = "ClassIcon_Hunter",
     ["ROGUE"       ] = "ClassIcon_Rogue",
@@ -782,8 +710,7 @@ class =
     ["DEMONHUNTER" ] = "ClassIcon_DemonHunter",
   }, -- class
 popularIcons = 
-  {
-    ["70_inscription_steamy_romance_novel_kit" ] = L["70_inscription_steamy_romance_novel_kit" ] ,
+  { ["70_inscription_steamy_romance_novel_kit" ] = L["70_inscription_steamy_romance_novel_kit" ] ,
     ["ability_bossashvane_icon02"              ] = L["ability_bossashvane_icon02"              ] ,
     ["ability_deathknight_heartstopaura"       ] = L["ability_deathknight_heartstopaura"       ] ,
     ["ability_hunter_beastcall"                ] = L["ability_hunter_beastcall"                ] ,
@@ -811,11 +738,8 @@ popularIcons =
     ["ui_rankedpvp_04_small"                   ] = L["ui_rankedpvp_04_small"                   ] ,
     ["vas_namechange"                          ] = L["vas_namechange"                          ] ,
     ["warrior_disruptingshout"                 ] = L["warrior_disruptingshout"                 ] ,
-
-  },
-};
-
--- iconDB
+  }, -- popularIcons
+}; -- iconDB
 
 local localizedRace,  playerRace  = UnitRace("player");
 local raceIcons = iconDB.race[playerRace];
@@ -916,44 +840,16 @@ StaticPopupDialogs[POPUP_CLEAR] =
 
 -- editor config 
 --
-local groupOrder = { "basics", "appearance", "glance", "bio", "status"};
+local groupOrder = { "basics", "appearance", "glance", "social", "bio", "status"};
 
-Editor.groups =
-{ 
-  basics = 
-      { fields = { "name", "title", 
-                   "race", "class", 
-                   "honorific", "pronouns", 
-                   "nickname", "house",
-                   "icon",
-                   "motto",
-                 },
-
-        title  = L["Group Basics"],
-      },
-
-  status =
-      { fields = { "rpStyle", "rpStatus", "currently", "oocInfo" },
-        title  = L["Group Status"],
-      },
-
-  appearance =
-      { fields = { "eyes", 
-                   "height", "weight", 
-                   "desc", },
-        title  = L["Group Appearance"],
-      },
-
-  bio =
-      { fields = { "age", "birthPlace", "home", "history" },
-        title  = L["Group Bio"],
-      },
-
-  glance =
-      { -- fields = { "glance1", "glance2", "glance3", "glance4", "glance5" },
-        fields = { "glances" },
-        title = L["Group Glance"],
-      },
+Editor.groups = {
+  appearance = { fields = { "iAppearance", "eyes", "height", "weight", "desc",       }, title = L["Group Appearance" ], },
+  basics =     { fields = { "iBasics", "icon", "detachedIcon", "honorific", "name",
+                            "honorificCustom", "race", "class", "pronouns"           }, title = L["Group Basics"     ], },
+  bio =        { fields = { "iBio", "age", "birthPlace", "home", "history"           }, title = L["Group Bio"        ], },
+  glance =     { fields = { "iGlance", "glances"                                     }, title = L["Group Glance"     ], },
+  social =     { fields = { "iSocial", "nickname", "house", "motto", "title "        }, title = L["Group Social"     ], },
+  status =     { fields = { "iStatus", "rpStyle", "rpStatus", "currently", "oocInfo" }, title = L["Group Status"     ], },
 };
 
 -- initialization
@@ -972,25 +868,25 @@ function Editor:GetMSP(msp)
       or RP_Identity:GetMSP(msp); 
 end; 
 function Editor:SetMSP(msp, value) 
-      if RP_Identity.db.profile.config.autoSave
-      then RP_Identity:SetMSP(msp, value);
-      else self.pending[msp] = value; 
-           self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile() .. L["(not saved)"]);
-      end;
+  if RP_Identity.db.profile.config.autoSave
+  then RP_Identity:SetMSP(msp, value);
+  else self.pending[msp] = value; 
+       self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile() .. L["(not saved)"]);
+  end;
 end;
 
 function Editor:ClearPending() 
   self.pending = {} 
-   self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile())
+  self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile())
 end;
 
 function Editor:ApplyPending() 
-      for field, value in pairs(self.pending) 
-      do RP_Identity:SetMSP(field, value); 
-      end;
-      self:GeneratePE();
-      self:ClearPending();
-      RP_Identity:UpdateIdentity();
+  for field, value in pairs(self.pending) 
+  do RP_Identity:SetMSP(field, value); 
+  end;
+  self:GeneratePE();
+  self:ClearPending();
+  RP_Identity:UpdateIdentity();
 end;
 
 Editor.ComputePE = computePE;
@@ -1044,205 +940,318 @@ local function fixEditBox(widget)
   widget:SetCallback("OnLeave", hide);
 end;
     
-local function makeInstruct(text)
+local function makeInstruct(category)
   local widget = AceGUI:Create("Label");
-  widget:SetText(text);
+  widget:SetText(L["Instruct " .. category]);
   widget:SetColor(1, 1, 1, 1);
   widget:SetFullWidth(true);
   return { widget };
 end;
 
 local function makeLabel(msp, width)
-      local w = AceGUI:Create("Label");
-      w.MSP = msp;
-      w:SetText(L["Label " .. msp] .. "   ");
-      w:SetColor(1, 1, 0, 1);
-      w:SetRelativeWidth(width)
-      return w;
+  local label = AceGUI:Create("Label");
+  label.MSP = msp;
+  label:SetText(L["Label " .. msp] .. "   ");
+  label:SetColor(1, 1, 0, 1);
+  label:SetRelativeWidth(width)
+  return label;
 end;
 
 local function makeEditBox(msp, width, labelWidth)
-      local label = makeLabel(msp, labelWidth);
-      local main = AceGUI:Create("EditBox");
-      fixEditBox(main);
-      main:SetRelativeWidth(width);
-      main.MSP = msp;
-      main:SetText(Editor:GetMSP(msp));
-      main:SetCallback("OnEnterPressed", function(self, event, text) Editor:SetMSP(self.MSP, text); end);
-      return { label, main };
+  local label = makeLabel(msp, labelWidth);
+  local main = AceGUI:Create("EditBox");
+  fixEditBox(main);
+  main:SetRelativeWidth(width);
+  main.MSP = msp;
+  main:SetText(Editor:GetMSP(msp));
+  main:SetCallback("OnEnterPressed", function(self, event, text) Editor:SetMSP(self.MSP, text); end);
+  return { label, main };
 end;
 
-local function makeDropdown(msp, width, labelW, customW)
-      local label = makeLabel(msp, labelW > 0 and labelW or 0.1);
+local function makeDropdown(msp, width, customW)
 
-      local custom = AceGUI:Create("EditBox");
-      fixEditBox(custom);
+  local custom = AceGUI:Create("EditBox");
+  fixEditBox(custom);
 
-      custom:SetRelativeWidth(customW > 0 and customW or 0.1)
-      custom.MSP = msp;
-      custom.tooltipMSP = msp .. "-custom";
-      custom:SetCallback("OnEnterPressed", 
-        function(self, event, text) 
-          Editor:SetMSP(self.MSP, text) 
-        end);
-      
-      local main = AceGUI:Create("Dropdown");
-      main:SetRelativeWidth(width > 0 and width or 0.1);
-      main.MSP = msp;
-      main:SetCallback("OnEnter", showTooltip);
-      main:SetCallback("OnLeave", hideTooltip);
-
-      main.custom = custom;
-
-      local myMenu = menu[msp];
-      local initialValue = Editor:GetMSP(msp);
-
-      if   myMenu[initialValue]
-      then main:SetValue(initialValue);
-           main:SetText(myMenu[initialValue]);
-           custom:SetDisabled(true); 
-      else main:SetValue("-1"); 
-           main:SetText(myMenu["-1"]);
-           custom:SetDisabled(false); 
-           custom:SetText(initialValue);
-      end;
-
-      local myOrder = menu[msp .. "Order"];
-
-      if not menu[msp .. "Sorted"]
-      then sortingMenu = myMenu;
-           table.sort(myOrder, sortMenu)
-           menu[msp .. "Sorted"] = true;
-      end;
-
-      main:SetList(myMenu, myOrder);
-
-      main:SetCallback("OnValueChanged", 
-                  function(self, event, key)
-                           if key == "-1"
-                           then custom:SetDisabled(false);
-                                custom:SetFocus();
-                                Editor:SetMSP(self.MSP, custom:GetText())
-                           else custom:SetDisabled(true);
-                                Editor:SetMSP(self.MSP, key);
-                           end;
-                  end);
-      local widgets = {}
-      if labelW  > 0 then table.insert(widgets, label) end;
-      if width   > 0 then table.insert(widgets, main) end;
-      if customW > 0 then table.insert(widgets, custom) end;
-      return widgets;
-end;
-
-local function makeMultiLine(msp, lines, width)
-      local main = AceGUI:Create("MultiLineEditBox");
-      main:SetLabel(L["Label " .. msp]);
-      main:SetNumLines(lines or 3);
-      if not width then main:SetFullWidth(true); else main:SetRelativeWidth(width) end;
-      main.MSP = msp;
-      main:SetCallback("OnEnter", showTooltip);
-      main:SetCallback("OnLeave", hideTooltip);
-      main:SetText( Editor:GetMSP(msp) );
-      main:SetCallback("OnEnterPressed", function(self, event, text) Editor:SetMSP(self.MSP, text); end);
-      return { main };
-end;
-
-local function makeIcon(msp, iconSize, iconWidth, dropdownWidth, customWidth)
-  local icon = AceGUI:Create("Icon");
-  icon.MSP = msp;
-  icon.tooltipMSP = msp .. "-icon";
-  icon:SetImageSize(iconSize, iconSize);
-  icon:SetRelativeWidth(iconWidth);
-
-  function icon.SetIcon(self, iconFile) 
-    if not iconFile or iconFile == ""
-    then self:SetImage();
-    else self:SetImage("Interface\\ICONS\\" .. iconFile); 
-    end;
-  end;
-  icon:SetIcon(Editor:GetMSP(msp));
-
-  local dropdown, custom = unpack(makeDropdown(msp, dropdownWidth, 0, customWidth));
-
-  custom:SetCallback("OnEnterPressed",
-    function(self, event, text)
+  custom:SetRelativeWidth(customW > 0 and customW or 0.1)
+  custom.MSP = msp;
+  custom.tooltipMSP = msp .. "-custom";
+  custom:SetCallback("OnEnterPressed", 
+    function(self, event, text) 
       Editor:SetMSP(self.MSP, text) 
-      icon:SetIcon(text)
     end);
-  dropdown:SetCallback("OnValueChanged",
+  
+  local main = AceGUI:Create("Dropdown");
+  main:SetRelativeWidth(width > 0 and width or 0.1);
+  main.MSP = msp;
+  main:SetCallback("OnEnter", showTooltip);
+  main:SetCallback("OnLeave", hideTooltip);
+
+  main.custom = custom;
+
+  local myMenu = menu[msp];
+  local initialValue = Editor:GetMSP(msp);
+
+  if   myMenu[initialValue]
+  then main:SetValue(initialValue);
+       main:SetText(myMenu[initialValue]);
+       custom:SetDisabled(true); 
+  else main:SetValue("-1"); 
+       main:SetText(myMenu["-1"]);
+       custom:SetDisabled(false); 
+       custom:SetText(initialValue);
+  end;
+
+  local myOrder = menu[msp .. "Order"];
+
+  if not menu[msp .. "Sorted"]
+  then sortingMenu = myMenu;
+       table.sort(myOrder, sortMenu)
+       menu[msp .. "Sorted"] = true;
+  end;
+
+  main:SetList(myMenu, myOrder);
+
+  main:SetCallback("OnValueChanged", 
     function(self, event, key)
       if key == "-1"
       then custom:SetDisabled(false);
            custom:SetFocus();
-           icon:SetIcon(custom:GetText());
-           Editor:SetMSP(self.MSP, key);
+           Editor:SetMSP(self.MSP, custom:GetText())
       else custom:SetDisabled(true);
            Editor:SetMSP(self.MSP, key);
-           icon:SetIcon(key);
       end;
     end);
-  return { icon, dropdown, custom };
+  return { main, custom };
+end;
+
+local detached = {};
+
+local function makeDetachedDropdown(msp, width)
+
+  local main = AceGUI:Create("Dropdown");
+  main:SetRelativeWidth(width > 0 and width or 0.1);
+  main.MSP = msp;
+  main:SetCallback("OnEnter", showTooltip);
+  main:SetCallback("OnLeave", hideTooltip);
+
+  main.custom = custom;
+
+  local myMenu = menu[msp];
+  local initialValue = Editor:GetMSP(msp);
+
+  function main:SetCustomDisabled(...) self.custom:SetDisabled(...); end;
+  function main:SetCustomText(    ...) self.custom:SetText(    ...); end;
+  function main:SetCustomFocus(   ...) self.custom:SetFocus(   ...); end;
+
+  if   myMenu[initialValue]
+  then main:SetValue(initialValue);
+       main:SetText(myMenu[initialValue]);
+       main:SetCustomDisabled(true); 
+  else main:SetValue("-1"); 
+       main:SetText(myMenu["-1"]);
+       main:SetCustomDisabled(false); 
+       main:SetCustomText(initialValue);
+  end;
+
+  local myOrder = menu[msp .. "Order"];
+
+  if not menu[msp .. "Sorted"]
+  then sortingMenu = myMenu;
+       table.sort(myOrder, sortMenu)
+       menu[msp .. "Sorted"] = true;
+  end;
+
+  main:SetList(myMenu, myOrder);
+
+  main:SetCallback("OnValueChanged", 
+    function(self, event, key)
+      if key == "-1"
+      then self:SetCustomDisabled(false);
+           self:SetCustomFocus();
+           Editor:SetMSP(self.MSP, custom:GetText())
+      else self:SetCustomDisabled:SetDisabled(true);
+           self.Editor:SetMSP(self.MSP, key);
+      end;
+    end);
+  detached[msp] = main;
+  return { main };
+end;
+
+local function makeDetachedCustom(msp, width)
+  local custom = AceGUI:Create("EditBox");
+  fixEditBox(custom);
+
+  custom:SetRelativeWidth(width)
+  custom.MSP = msp;
+  custom.tooltipMSP = msp .. "-custom";
+  custom:SetCallback("OnEnterPressed", function(self, event, text) 
+      Editor:SetMSP(self.MSP, text) 
+    end);
+  if detached[msp] then detached[msp].custom = custom; end;
+  return { custom };
+end;
+
+local function makeMultiLine(msp, lines, width)
+  local main = AceGUI:Create("MultiLineEditBox");
+  main:SetLabel(L["Label " .. msp]);
+  main:SetNumLines(lines or 3);
+  if not width then main:SetFullWidth(true); else main:SetRelativeWidth(width) end;
+  main.MSP = msp;
+  main:SetCallback("OnEnter", showTooltip);
+  main:SetCallback("OnLeave", hideTooltip);
+  main:SetText( Editor:GetMSP(msp) );
+  main:SetCallback("OnEnterPressed", function(self, event, text) Editor:SetMSP(self.MSP, text); end);
+  return { main };
+end;
+
+local function makeDetachedIcon(iconSize, width)
+  local icon = AceGUI:Create("Icon");
+  icon.MSP = "IC";
+  icon.tooltipMSP = "IC-icon";
+  icon:SetImageSize(iconSize, iconSize);
+  icon:SetRelativeWidth(width);
+
+  function icon:SetIcon(useThisIcon)
+    local iconFile   = useThisIcon or Editor:GetMSP("IC-icon");
+    local customIcon = Editor:GetMSP("IC-icon-custom");
+
+    if     iconFile == "-1" and customIcon ~= ""
+    then   self:SetImage("Interface\\ICONS\\" .. customIcon)
+    elseif iconFile ~= ""
+    then   self:SetImage("Interface\\ICONS\\" .. iconFile);
+    end;
+  end;
+
+  icon:SetIcon();
+
+  detached["IC-icon"] = icon;
+  return { icon };
+end;
+
+local function makeDetachedIconDropdown(width, customWidth)
+
+  local custom = AceGUI:Create("EditBox");
+  fixEditBox(custom);
+
+  custom:SetRelativeWidth(customWidth)
+  custom.MSP = "IC";
+  custom.tooltipMSP = "IC-icon-custom";
+  custom:SetCallback("OnEnterPressed", 
+    function(self, event, text) 
+      Editor:SetMSP("IC", text) 
+      self.icon:SetIcon();
+    end);
+  
+  local dropdown = AceGUI:Create("Dropdown");
+  dropdown:SetRelativeWidth(width)
+  dropdown.MSP = "IC";
+  dropdown:SetCallback("OnEnter", showTooltip);
+  dropdown:SetCallback("OnLeave", hideTooltip);
+
+  dropdown.custom = custom;
+
+  local myMenu = menu.IC;
+  local initialValue = Editor:GetMSP("IC");
+
+  if   myMenu[initialValue]
+  then dropdown:SetValue(initialValue);
+       dropdown:SetText(myMenu[initialValue]);
+       custom:SetDisabled(true); 
+  else dropdown:SetValue("-1"); 
+       dropdown:SetText(myMenu["-1"]);
+       custom:SetDisabled(false); 
+       custom:SetText(initialValue);
+  end;
+
+  local myOrder = menu.ICOrder;
+
+  if not menu.ICSorted;
+  then sortingMenu = myMenu;
+       table.sort(myOrder, sortMenu)
+       menu.ICSorted = true;
+  end;
+
+  dropdown:SetList(myMenu, myOrder);
+
+  dropdown:SetCallback("OnValueChanged", 
+    function(self, event, key)
+      if   key == "-1"
+      then custom:SetDisabled(false);
+           custom:SetFocus();
+           self.icon:SetIcon(custom:GetText())
+           Editor:SetMSP("IC", custom:GetText())
+           self.icon:SetIcon()
+      else custom:SetDisabled(true);
+           Editor:SetMSP("IC", key);
+           self.icon:SetIcon(key)
+      end;
+    end);
+
+  if detached.IC then dropdown.icon = detached.IC; custom.icon = detached.IC end;
+
+  return { dropdown, custom };
+
 end;
 
 local function makeColorfulEditBox(msp, width, labelWidth)
-      local ADD_FMT = "|cff%02x%02x%02x%s|r";
-      local EXTRACT_FMT = "^|cff(%x%x)(%x%x)(%x%x)(.+)|r$";
+  local ADD_FMT = "|cff%02x%02x%02x%s|r";
+  local EXTRACT_FMT = "^|cff(%x%x)(%x%x)(%x%x)(.+)|r$";
 
-      local function addColor(r, g, b, name) 
-        if r then return string.format(ADD_FMT, r * 255, g * 255, b  * 255, name) 
-        else return name;
-        end;
-      end;
+  local function addColor(r, g, b, name) 
+    if r then return string.format(ADD_FMT, r * 255, g * 255, b  * 255, name) 
+    else return name;
+    end;
+  end;
 
-      local function extractColor(str)
-            local r, g, b, name = str:match(EXTRACT_FMT)
-            return r and tonumber(r, 16) / 255 or nil, 
-                                 g and tonumber(g, 16) / 255 or nil, 
-                                 b and tonumber(b, 16) / 255 or nil,
-                                 name or str
-      end;
+  local function extractColor(str)
+    local r, g, b, name = str:match(EXTRACT_FMT)
+    return r and tonumber(r, 16) / 255 or nil, 
+           g and tonumber(g, 16) / 255 or nil, 
+           b and tonumber(b, 16) / 255 or nil,
+           name or str
+  end;
 
-      local label = makeLabel(msp, labelWidth);
+  local label = makeLabel(msp, labelWidth);
 
-      local main = AceGUI:Create("EditBox");
-      fixEditBox(main);
-      main:SetRelativeWidth(width); 
-      main.MSP = msp;
-      main:SetCallback("OnEnter", showTooltip);
-      main:SetCallback("OnLeave", hideTooltip);
+  local main = AceGUI:Create("EditBox");
+  fixEditBox(main);
+  main:SetRelativeWidth(width); 
+  main.MSP = msp;
+  main:SetCallback("OnEnter", showTooltip);
+  main:SetCallback("OnLeave", hideTooltip);
 
-      local picker = AceGUI:Create("ColorPicker");
-      picker.MSP = msp;
-      picker:SetHasAlpha(false);
-      picker:SetRelativeWidth(0.1);
-      picker.main = main;
-      picker.tooltipMSP = "Color";
-      picker:SetCallback("OnEnter", showTooltip);
-      picker:SetCallback("OnLeave", hideTooltip);
+  local picker = AceGUI:Create("ColorPicker");
+  picker.MSP = msp;
+  picker:SetHasAlpha(false);
+  picker:SetRelativeWidth(0.1);
+  picker.main = main;
+  picker.tooltipMSP = "Color";
+  picker:SetCallback("OnEnter", showTooltip);
+  picker:SetCallback("OnLeave", hideTooltip);
 
-      picker:SetCallback("OnValueConfirmed",
-            function(self, event, r, g, b, a)
-                  Editor:SetMSP(self.MSP, addColor(r, g, b, self.main:GetText() ));
-                  self.r, self.g, self.b = r, g, b;
-            end);
-                  
-      main.picker = picker;
+  picker:SetCallback("OnValueConfirmed",
+    function(self, event, r, g, b, a)
+      Editor:SetMSP(self.MSP, addColor(r, g, b, self.main:GetText() ));
+      self.r, self.g, self.b = r, g, b;
+    end);
+              
+  main.picker = picker;
 
-      local initialValue = Editor:GetMSP(msp);
-      local r, g, b, name = extractColor(initialValue);
-      r, g, b = r or 1, g or 1, b or 1;
-      picker:SetColor(r, g, b, 1);
-      picker.r, picker.g, picker.b = r, g, b;
-      main:SetText(name);
+  local initialValue = Editor:GetMSP(msp);
+  local r, g, b, name = extractColor(initialValue);
+  r, g, b = r or 1, g or 1, b or 1;
+  picker:SetColor(r, g, b, 1);
+  picker.r, picker.g, picker.b = r, g, b;
+  main:SetText(name);
 
-      main:SetCallback("OnEnterPressed",
-            function(self, event, text)
-                  Editor:SetMSP(self.MSP, addColor(self.picker.r, self.picker.g, self.picker.b, text));
-            end);
+  main:SetCallback("OnEnterPressed",
+    function(self, event, text)
+      Editor:SetMSP(self.MSP, addColor(self.picker.r, self.picker.g, self.picker.b, text));
+    end);
 
-      return { label, main, picker };
+  return { label, main, picker };
 end;
-
 
 local function makeGlances()
   local preview = {};
@@ -1262,7 +1271,7 @@ local function makeGlances()
 
     icon.MSP        = msp;
     icon.tooltipMSP = msp .. "-icon";
-    icon:SetRelativeWidth(0.19);
+    icon:SetRelativeWidth(0.20);
     icon:SetImageSize(64, 64);
 
     local edge = numberCoords[msp];
@@ -1304,48 +1313,27 @@ local function makeGlances()
     heading:SetText(L["Label " .. msp]);
     self:AddChild(heading);
 
-    local titleLabel = makeLabel(msp .. "-title", 0.15);
-    self:AddChild(titleLabel);
-
-    local title = AceGUI:Create("EditBox");
-    fixEditBox(title);
-    title:SetRelativeWidth(0.85);
-    title.MSP = msp .. "-title";
-    title:SetText(Editor:GetMSP(msp .. "-title"));
-    title:SetCallback("OnEnterPressed", 
-      function(self, event, text) 
-        Editor:SetMSP(self.MSP, text); 
-        Editor:GeneratePE();
-      end);
-    self:AddChild(title);
-
-    local left   = AceGUI:Create("SimpleGroup");
-    left:SetRelativeWidth(0.45);
-    self:AddChild(left);
-
-    -- local dropdown, custom = unpack(makeDropdown(msp .. "-icon", 0.95, 0.00, 0.95));
-    -- local function makeDropdown(msp, width, labelW, customW)
-    local custom = AceGUI:Create("EditBox");
-    fixEditBox(custom);
-
     local iconPreview = preview[msp];
 
-    custom:SetRelativeWidth(0.95);
+    local custom = AceGUI:Create("EditBox");
+    fixEditBox(custom);
+    custom:SetRelativeWidth(0.5);
     custom.MSP = msp .. "-icon";
     custom.tooltipMSP = msp .. "-icon-custom";
+    custom:SetLabel(L["Label " .. msp .. "-icon-custom"]);
     custom:SetCallback("OnEnterPressed", 
       function(self, event, text) 
         Editor:SetMSP(self.MSP, text) 
         Editor:GeneratePE();
         iconPreview:SetIcon()
       end);
-    left:AddChild(custom);
       
     local dropdown = AceGUI:Create("Dropdown");
-    dropdown:SetRelativeWidth(0.95);
+    dropdown:SetRelativeWidth(0.5);
     dropdown.MSP = msp .. "-icon";
     dropdown:SetCallback("OnEnter", showTooltip);
     dropdown:SetCallback("OnLeave", hideTooltip);
+    dropdown:SetLabel(L["Label " .. msp .. "-icon"]);
 
     local myMenu = menu.IC;
     local myOrder = menu.ICOrder;
@@ -1361,6 +1349,7 @@ local function makeGlances()
     if   myMenu[initialValue]
     then dropdown:SetValue(initialValue);
          dropdown:SetText(myMenu[initialValue]);
+         custom:SetText(Editor:GetMSP(msp .. "-icon-custom") or "");
          custom:SetDisabled(true); 
     else dropdown:SetValue("-1"); 
          dropdown:SetText(myMenu["-1"]);
@@ -1377,25 +1366,33 @@ local function makeGlances()
         if key == "-1"
         then custom:SetDisabled(false);
              custom:SetFocus();
-             icon:SetIcon(self.custom:GetText());
+             iconPreview:SetIcon(self.custom:GetText());
         else custom:SetDisabled(true);
              iconPreview:SetIcon();
         end
       end);
 
-    left:AddChild(dropdown);
+    self:AddChild(dropdown);
+    self:AddChild(custom);
   
-    local middle = AceGUI:Create("Label");
-    middle:SetRelativeWidth(0.05);
-    self:AddChild(middle);
+    local titleLabel = makeLabel(msp .. "-title", 0.15);
+    self:AddChild(titleLabel);
 
-    local right = AceGUI:Create("SimpleGroup");
-    right:SetRelativeWidth(0.45);
-    self:AddChild(right);
+    local title = AceGUI:Create("EditBox");
+    fixEditBox(title);
+    title:SetRelativeWidth(0.85);
+    title.MSP = msp .. "-title";
+    title:SetText(Editor:GetMSP(msp .. "-title"));
+    title:SetCallback("OnEnterPressed", 
+      function(self, event, text) 
+        Editor:SetMSP(self.MSP, text); 
+        Editor:GeneratePE();
+      end);
+    self:AddChild(title);
 
     local textbox = AceGUI:Create("MultiLineEditBox");
     textbox:SetLabel(L["Label " .. msp .. "-text"]);
-    textbox:SetNumLines(2);
+    textbox:SetNumLines(5);
     textbox:SetFullWidth(true);
     textbox.MSP = msp .. "-text";
     textbox:SetCallback("OnEnter", showTooltip);
@@ -1407,7 +1404,7 @@ local function makeGlances()
         Editor:GeneratePE();
       end);
 
-    right:AddChild(textbox)
+    self:AddChild(textbox)
   end;
   glancesGroup:SetFullWidth(true);
   glancesGroup:SetFullHeight(true);
@@ -1419,47 +1416,69 @@ local function makeGlances()
   return widgets;
 end;
 
+--[===[
+local groupOrder = { "basics", "appearance", "glance", "social", "bio", "status"};
+
+Editor.groups = {
+  appearance = { fields = { "eyes", "height", "weight", "desc",            }, title = L["Group Appearance" ], },
+  basics =     { fields = { "icon", "detachedIcon", "honorific", "name", 
+                            "honorificCustom", "race", "class", "pronouns" }, title = L["Group Basics"     ], },
+  bio =        { fields = { "age", "birthPlace", "home", "history"         }, title = L["Group Bio"        ], },
+  glance =     { fields = { "glances"                                      }, title = L["Group Glance"     ], },
+  social =     { fields = { "nickname", "house", "motto", "title "         }, title = L["Group Social"     ], },
+  status =     { fields = { "rpStyle", "rpStatus", "currently", "oocInfo"  }, title = L["Group Status"     ], },
+};
+--]===]
+
 local frameConstructor = 
 { 
-      --  makeEditBox(msp, width, labelWidth)
-      --  makeDropdown(msp, width, labelW, customW)
-      --  makeColorfulEditBox(msp, width, labelWidth)
-      --  makeMultiLine(msp, lines)
-      --  makeIcon(msp, iconSize, iconWidth, dropdownWidth, customWidth)
-      --  makeInstruct(text)
+      --[===[  
+        makeEditBox(msp, width, labelWidth)
+        makeDropdown(msp, width, customW)
+        makeColorfulEditBox(msp, width, labelWidth)
+        makeMultiLine(msp, lines)
+        makeIcon(msp, iconSize, iconWidth, dropdownWidth, customWidth)
+        makeInstruct(text)
+      --]===]
 
-      instructBasics = function() return makeInstruct(L["Instruct Basics"]) end,
-      name       = function() return makeColorfulEditBox("NA", 0.75, 0.15     ) end,
-      race       = function() return makeEditBox("RA", 0.85, 0.15            ) end,
-      class      = function() return makeEditBox("RC", 0.85, 0.15            ) end,
-      title      = function() return makeEditBox("NT", 0.85, 0.15            ) end,
-      house      = function() return makeEditBox("NH", 0.35, 0.15             ) end,
-      nickname   = function() return makeEditBox("NI", 0.35, 0.15             ) end,
-      pronouns   = function() return makeDropdown("PN", 0.25, 0, 0.25       ) end,
-      honorific  = function() return makeDropdown("PX", 0.25, 0, 0.20       ) end,
-      motto      = function() return makeEditBox("MO", 0.85, 0.15             ) end,
-      icon        = function() return makeIcon("IC", 50, 0.15, 0.30, 0.50    ) end, 
 
-      instructStatus = function() return makeInstruct(L["Instruct Status"]) end,
-      rpStatus   = function() return makeDropdown("FC", 0.25, 0, 0.25       ) end,
-      rpStyle    = function() return makeDropdown("FR", 0.25, 0, 0.25       ) end,
-      currently  = function() return makeMultiLine("CU", 12, 0.5             ) end,
-      oocInfo    = function() return makeMultiLine("CO", 12, 0.5             ) end,
+  iBasics         = function() return makeInstruct("Basics"                ) end,
+  icon            = function() return makeDetachedIcon(64, 0.15            ) end,
+  honorific       = function() return makeDetachedDropdown("PX", 0.15      ) end,
+  name            = function() return makeColorfulEditBox("NA", 0.65 0.15  ) end,
+  honorificCustom = function() return makeDetachedCustom("PX", 0.15        ) end,
+  pronouns        = function() return makeDropdown("PN", 0.25, 0, 0.25     ) end,
+  race            = function() return makeEditBox("RA", 0.85, 0.15         ) end,
+  class           = function() return makeEditBox("RC", 0.85, 0.15         ) end,
+  iconDetached    = function() return makeDetachedIconDropdown(0.25, 0.25  ) end,
+  -- appearance
+  iAppearance     = function() return makeInstruct("Appearance"            ) end,
+  eyes            = function() return makeColorfulEditBox("AE", 0.75, 0.15 ) end,
+  height          = function() return makeEditBox("AH", 0.85, 0.15         ) end,
+  weight          = function() return makeEditBox("AW", 0.85, 0.15         ) end,
+  desc            = function() return makeMultiLine("DE", 12               ) end,
+  -- glances
+  iGlance         = function() return makeInstruct("Glance"                ) end,
+  glances         = function() return makeGlances(                         ) end,
+  -- social
+  iSocial         = function() return makeInstruct("Social"                ) end,
+  nickname        = function() return makeEditBox("NI", 0.85, 0.15         ) end,
+  title           = function() return makeEditBox("NT", 0.85, 0.15         ) end,
+  house           = function() return makeEditBox("NH", 0.85, 0.15         ) end,
+  motto           = function() return makeEditBox("MO", 0.85, 0.15         ) end,
+  -- bio
+  iBio            = function() return makeInstruct("Bio"                   ) end,
+  age             = function() return makeEditBox("AG", 0.85, 0.15         ) end,
+  birthPlace      = function() return makeEditBox("HB", 0.85, 0.15         ) end,
+  home            = function() return makeEditBox("HH", 0.85, 0.15         ) end,
+  history         = function() return makeMultiLine("HI", 12               ) end,
+  -- status
+  iStatus         = function() return makeInstruct("Status"                ) end,
+  rpStatus        = function() return makeDropdown("FC", 0.25, 0.25        ) end,
+  rpStyle         = function() return makeDropdown("FR", 0.25, 0.25        ) end,
+  currently       = function() return makeMultiLine("CU", 12, 0.5          ) end,
+  oocInfo         = function() return makeMultiLine("CO", 12, 0.5          ) end,
 
-      instructAppearance = function() return makeInstruct(L["Instruct Appearance"]) end,
-      eyes       = function() return makeColorfulEditBox("AE", 0.75, 0.15     ) end,
-      height     = function() return makeEditBox("AH", 0.85, 0.15             ) end,
-      weight     = function() return makeEditBox("AW", 0.85, 0.15            ) end,
-      desc       = function() return makeMultiLine("DE", 12                 ) end,
-
-      instructBio = function() return makeInstruct(L["Instruct Bio"]) end,
-      age        = function() return makeEditBox("AG", 0.85, 0.15             ) end,
-      birthPlace = function() return makeEditBox("HB", 0.85, 0.15            ) end,
-      home       = function() return makeEditBox("HH", 0.85, 0.15             ) end,
-      history    = function() return makeMultiLine("HI", 12                  ) end,
-
-      instructGlance = function() return makeInstruct(L["Instruct Glance"]) end,
-      glances = function() return makeGlances() end,
 };
 
 Editor.tabGroup = AceGUI:Create("TabGroup");
@@ -1497,10 +1516,10 @@ function Editor.tabGroup:LoadTab(tab)
 end;
 
 Editor.tabGroup:SetCallback("OnGroupSelected",
-    function(self, event, group)
-       self.Editor:ApplyPending();
-       self:LoadTab(group);
-    end);
+  function(self, event, group)
+    self.Editor:ApplyPending();
+    self:LoadTab(group);
+  end);
 
 function Editor:ReloadTab()
   self.tabGroup:LoadTab(self.currentGroup or groupOrder[1]);
@@ -1508,9 +1527,9 @@ function Editor:ReloadTab()
 end;
 
 function RP_Identity:OpenOptions()
-    InterfaceOptionsFrame:Show();
-    InterfaceOptionsFrame_OpenToCategory(self.addOnTitle)
-    self.Editor:Hide();
+  InterfaceOptionsFrame:Show();
+  InterfaceOptionsFrame_OpenToCategory(self.addOnTitle)
+  self.Editor:Hide();
 end;
 -- editor buttons
 --
@@ -1645,32 +1664,20 @@ SlashCmdList["RP_IDENTITY"] =
   function(a)
     local  param = { strsplit(" ", a); };
     local  cmd = table.remove(param, 1);
-    if     cmd == "" or cmd == "help"
-    then   RP_Identity:HelpCommand();
-    elseif cmd:match("^option") or cmd:match("^config")
-    then   RP_Identity:OpenOptions();
-    elseif cmd == "toggle" and param[1] == "status"
-    then   RP_Identity:ToggleStatus();
-    elseif cmd == "toggle" 
-    then   RP_Identity:ToggleEditorFrame();
-    elseif cmd == "open"
-    then   RP_Identity.Editor:ReloadTab();
-           RP_Identity.Editor.frame:Show();
-    elseif cmd == "status" and param[1] == "ooc"
-    then   RP_Identity:SetStatus("1");
-    elseif cmd == "status" and param[1] == "ic"
-    then   RP_Identity:SetStatus("2");
-    elseif cmd == "status" and not param[1]
-    then   RP_Identity:NotifyStatus();
-    elseif cmd == "status"
-    then   RP_Identity:SetStatus(table.concat(param, " "))
-    elseif cmd:match("^curr") and not param[1]
-    then   RP_Identity:NotifyCurrently()
-    elseif cmd:match("^curr")
-    then   RP_Identity:SetCurrently(table.concat(param, " "));
-    elseif cmd:match("^info") and not param[1]
-    then   RP_Identity:NotifyInfo()
-    elseif cmd:match("^info")
-    then   RP_Identity:SetInfo(table.concat(param, " "));
+
+    if     cmd == "" or cmd == "help"                   then RP_Identity:HelpCommand();
+    elseif cmd:match("^option") or cmd:match("^config") then RP_Identity:OpenOptions();
+    elseif cmd == "toggle" and param[1] == "status"     then RP_Identity:ToggleStatus();
+    elseif cmd == "toggle"                              then RP_Identity:ToggleEditorFrame();
+    elseif cmd == "open"                                then RP_Identity.Editor:ReloadTab(); RP_Identity.Editor.frame:Show();
+    elseif cmd == "status" and param[1] == "ooc"        then RP_Identity:SetStatus("1");
+    elseif cmd == "status" and param[1] == "ic"         then RP_Identity:SetStatus("2");
+    elseif cmd == "status" and not param[1]             then RP_Identity:NotifyStatus();
+    elseif cmd == "status"                              then RP_Identity:SetStatus(table.concat(param, " "))
+    elseif cmd:match("^curr") and not param[1]          then RP_Identity:NotifyCurrently()
+    elseif cmd:match("^curr")                           then RP_Identity:SetCurrently(table.concat(param, " "));
+    elseif cmd:match("^info") and not param[1]          then RP_Identity:NotifyInfo()
+    elseif cmd:match("^info")                           then RP_Identity:SetInfo(table.concat(param, " "));
+
     end;
   end;

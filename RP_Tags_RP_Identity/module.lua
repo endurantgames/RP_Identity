@@ -19,21 +19,6 @@ function(self, event, ...)
         end);
 end);
 
-Module:WaitUntil("ADDON_LOAD",
-function(self, event, ...)
-  AceEvent.RegisterMessage(self, "RP_IDENTITY_READY",
-    function(self, event, ...)
-      print("variables loaded");
-      if RP_Identity.db.profile.myMSP.VA
-      and not RP_Identity.db.profile.msp.my.VA:match(RPTAGS.metadata.Title)
-      then print("no rptags found");
-           RP_Identity.db.profile.myMSP.VA =
-           RPTAGS.metadata.Title .. "/" .. RPTAGS.metadata.Version .. " + " ..
-           RP_Identity.db.profile.myMSP.VA
-      end;
-  end)
-end);
-
 Module:WaitUntil("MODULE_D",
 function(self, event, ...)
   AceEvent.RegisterMessage(self, "RP_IDENTITY_UPDATE_IDENTITY", function(self, event, ...) RPTAGS.utils.frames.refreshAll() end);
