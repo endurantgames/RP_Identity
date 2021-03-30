@@ -175,12 +175,12 @@ local me, realm;
 
 function RP_Identity:OnInitialize()
             
-      realm = GetNormalizedRealmName();
-      me    = UnitName("player") .. "-" .. realm;
 
       self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", myDefaults);
 
       function self:UpdateIdentity()
+            realm = GetNormalizedRealmName();
+            me    = UnitName("player") .. "-" .. realm;
             for  field, value in pairs(self.db.profile.myMSP) 
             do   msp.my[field] = value; 
                  msp.char[me].field[field] = value;
@@ -479,7 +479,6 @@ function RP_Identity:ResetIdentity()
 end; 
 
 local function generatePE(self)
-  print("here we are about to generate some PE");
   local recordSeparator = "\n\n---\n\n"; -- who thought this up?
   local questionMark = "|TInterface\\Icons\\INV_Misc_QuestionMark:32:32|t";
   local glanceList = { "PE1", "PE2", "PE3", "PE4", "PE5" };
@@ -505,16 +504,11 @@ local function generatePE(self)
 
   for _, glance in ipairs(glanceList)
   do  
-      print("creating glance", glance);
       local title  = self:GetMSP(glance .. "-title");
-      print("title is: [" .. (title or "nil") .. "]");
       local text   = self:GetMSP(glance .. "-text");
-      print("text is: [" .. (text or "nil") .. "]");
       local icon   = self:GetMSP(glance .. "-icon");
-      print("icon is: [" .. (icon or "nil") .. "]");
       local custom = self:GetMSP(glance .. "-icon-custom");
-      print("custom is: [" .. (custom or "nil") .. "]");
-      if title ~= "" or text ~= "" or icon ~= "" or custom ~= ""
+      if not(title == "" and text == "" and icon == "" and custom == "")
       then table.insert(holder, helper(title, text, icon, custom))
       end;
   end;
@@ -768,8 +762,6 @@ glance =
     ["ability_deathknight_heartstopaura"       ] = L["ability_deathknight_heartstopaura"       ] ,
     ["ability_hunter_beastcall"                ] = L["ability_hunter_beastcall"                ] ,
     ["ability_priest_heavanlyvoice"            ] = L["ability_priest_heavanlyvoice"            ] ,
-    ["ability_racial_preturnaturalcalm"        ] = L["ability_racial_preturnaturalcalm"        ] ,
-    ["ability_racial_viciousness"              ] = L["ability_racial_viciousness"              ] ,
     ["ability_rogue_bloodyeye"                 ] = L["ability_rogue_bloodyeye"                 ] ,
     ["ability_warrior_strengthofarms"          ] = L["ability_warrior_strengthofarms"          ] ,
     ["achievement_doublerainbow"               ] = L["achievement_doublerainbow"               ] ,
@@ -1193,9 +1185,7 @@ local function makeGlances()
   local glancesGroup = AceGUI:Create("SimpleGroup");
 
   local function createPreviewIcon(msp)
-    local frameGlow = "Interface\\Buttons\\ButtonHilight-SquareQuickslot";
     local bigNumbers = "Interface\\Timer\\BigTimerNumbers";
-    local glowNumbers = "Interface\\Timer\\BigTimerNumbersGlow";
     local numberCoords = 
     { PE1 = { L = 1/4, R = 2/4, T = 0/3, B = 1/3 },
       PE2 = { L = 2/4, R = 3/4, T = 0/3, B = 1/3 },
@@ -1205,62 +1195,29 @@ local function makeGlances()
     }
     local icon = AceGUI:Create("IconNoHighlight")
 
-    local r, g, b, a = unpack(RP_Identity.addOnColor);
-
     icon.MSP        = msp;
     icon.tooltipMSP = msp .. "-icon";
     icon:SetRelativeWidth(0.19);
     icon:SetImageSize(64, 64);
 
-    icon.buttonglow = icon:CreateTexture(nil, "HIGHLIGHT");
-    icon.buttonglow:SetSize(69, 69);
-    icon.buttonglow:SetPoint("TOP", -2, -5);
-    icon.buttonglow:SetTexture(frameGlow);
-    icon.buttonglow:SetBlendMode("ADD")
-    icon.buttonglow:SetDesaturated(true);
-
     local edge = numberCoords[msp];
-    icon.numberglow = icon:CreateTexture(nil, "HIGHLIGHT");
-    icon.numberglow:SetSize(64, 64);
-    icon.numberglow:SetPoint("TOP", 0, -5);
-    icon.numberglow:SetTexture(glowNumbers);
-    icon.numberglow:SetTexCoord(edge.L, edge.R, edge.T, edge.B);
-    icon.numberglow:SetVertexColor(r, g, b, 0.5);
-    icon.numberglow:SetBlendMode("BLEND")
-
-    for _, highlight in ipairs({ icon.numberglow, icon.buttonglow })
-    do function highlight:MakeVisible()   self:SetVertexColor(r, g, b, 0.5) end;
-       function highlight:MakeInvisible() self:SetVertexColor(r, g, b, 0) end;
-       function highlight:MakeBright()    self:SetVertexColor(r, g, b, 1) end;
-    end;
 
     function icon:SetIcon(useThisIcon)
       local iconFile   = useThisIcon or Editor:GetMSP(self.MSP .. "-icon");
       local customIcon = Editor:GetMSP(self.MSP .. "-icon-custom");
+
       if     iconFile == "-1" and customIcon ~= ""
       then   self:SetImage("Interface\\ICONS\\" .. customIcon)
-             self.image:SetDesaturated(false);
-             self.highlight = self.buttonglow;
       elseif iconFile ~= ""
       then   self:SetImage("Interface\\ICONS\\" .. iconFile);
-             self.image:SetDesaturated(false);
-             self.highlight = self.buttonglow;
       else   self:SetImage(bigNumbers, edge.L, edge.R, edge.T, edge.B);
-             self.image:SetDesaturated(true);
-             self.image:SetVertexColor(r, g, b, 0.5);
-             self.highlight = self.numberglow;
-      end;
-      self.numberglow:MakeInvisible();
-      self.buttonglow:MakeInvisible();
-      if glancesGroup.current == self.MSP
-      then self.highlight:MakeBright();
-      else self.highlight:MakeVisible();
       end;
     end;
 
-    local function icon_OnClick(self, event)
-      glancesGroup:SelectGlance(self.MSP) 
+    local function icon_OnClick(self, event) 
+     glancesGroup:SelectGlance(self.MSP) 
     end;
+
     icon:SetCallback("OnClick", icon_OnClick);
     icon:SetIcon();
     table.insert(widgets, icon);
@@ -1271,14 +1228,7 @@ local function makeGlances()
   function glancesGroup:SelectGlance(msp)
     local items;
     glancesGroup.current = msp;
-    for iconMSP, icon in pairs(preview)
-    do if iconMSP == msp 
-       then icon:LockHighlight() 
-            icon.highlight:MakeBright();
-       else icon:UnlockHighlight(); 
-            icon.highlight:MakeVisible();
-       end;
-    end;
+
     self:ReleaseChildren();
 
     local heading = AceGUI:Create("Heading");
@@ -1328,7 +1278,7 @@ local function makeGlances()
 
     dropdown:SetCallback("OnValueChanged", dropdown_OnValueChanged);
     dropdown.custom = custom;
-    dropdown.icon    = preview[msp];
+    dropdown.icon   = preview[msp];
 
     left:AddChild(dropdown);
     left:AddChild(custom);
