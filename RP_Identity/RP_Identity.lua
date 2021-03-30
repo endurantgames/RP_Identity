@@ -171,11 +171,13 @@ local function setAutoSave(info, value)
   RP_Identity.closeButton:SetShown(value);
 end;
 
-local realm = GetNormalizedRealmName();
-local me = UnitName("player") .. "-" .. realm;
+local me, realm;
 
 function RP_Identity:OnInitialize()
             
+      realm = GetNormalizedRealmName();
+      me    = UnitName("player") .. "-" .. realm;
+
       self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", myDefaults);
 
       function self:UpdateIdentity()
@@ -185,6 +187,7 @@ function RP_Identity:OnInitialize()
             end;
             if self.Editor:IsShown() then self.Editor:ReloadTab(); end;
             msp:Update();
+            self:SendMessage("RP_IDENTITY_UPDATE_IDENTITY");
       end;
 
       self.db.RegisterCallback(self, "OnProfileChanged", "UpdateIdentity");
@@ -493,10 +496,10 @@ local function generatePE(self)
     end;
     table.insert(record, newline);
     table.insert(record, "#");
-    table.insert(record, title ~= "" or "...");
+    table.insert(record, title ~= "" and title or "...");
     table.insert(record, newline);
     table.insert(record, newline);
-    table.insert(record, text ~= "" or "...");
+    table.insert(record, text ~= "" and text   or "...");
     return table.concat(record);
   end;
 
@@ -573,6 +576,10 @@ local menu =
 
   ICOrder = { "", maskIconNoPath },
 
+  PE = {},
+
+  PEOrder = {},
+
 };
 
 local extraPronouns = L["Pronouns List"];
@@ -597,67 +604,67 @@ local iconDB =
   race = {
     
     ["BloodElf"] = { 
-      [1] = "achievement_character_bloodelf_female",
+      [1] = "inv_misc_tournaments_symbol_bloodelf",
       [2] = "achievement_character_bloodelf_male",
       [3] = "achievement_character_bloodelf_female",
     },
 
     ["DarkIronDwarf"] = { 
-      [1] = "ability_racial_foregedinflames",
+      [1] = "inv_faction_alliancewarfront_round_darkirondwarf",
       [2] = "ability_racial_fireblood",
       [3] = "ability_racial_foregedinflames",
     },
 
     ["Draenei"] = {
-      [1] = "achievement_character_draenei_female",
+      [1] = "inv_misc_tournaments_symbol_draenei",
       [2] = "achievement_character_draenei_male",
       [3] = "achievement_character_draenei_female",
     },
 
     ["Dwarf"] = {
-    [1] = "achievement_character_dwarf_female",
+      [1] = "inv_misc_tournaments_symbol_dwarf",
       [2] = "achievement_character_dwarf_male",
       [3] = "achievement_character_dwarf_female",
     },
 
     ["Gnome"] = {
-      [1] = "achievement_character_gnome_female",
+      [1] = "inv_misc_tournaments_symbol_gnome",
       [2] = "achievement_character_gnome_male",
       [3] = "achievement_character_gnome_female",
     },
 
     ["Goblin"] = {
       [1] = "ability_racial_rocketjump",
-      [2] = "ability_racial_rocketjump",
-      [3] = "ability_racial_rocketjump",
+      [2] = "achievement_goblinhead",
+      [3] = "achievement_femalegoblinhead",
     },
 
     ["HighmountainTauren"] = {
-      [1] = "achievement_alliedrace_highmountaintauren",
+      [1] = "inv_faction_hordewarfront_round_highmountaintauren",
       [2] = "ability_racial_bullrush",
       [3] = "achievement_alliedrace_highmountaintauren",
     },
 
     ["Human"] = {
-      [1] = "achievement_character_human_female",
+      [1] = "inf_misc_tournaments_symbol_human",
       [2] = "achievement_character_human_male",
       [3] = "achievement_character_human_female",
     },
 
     ["KulTiran"] = {
-      [1] = "ability_racial_childofthesea",
+      [1] = "inv_faction_alliancewarfront_round_proudmooreadmiralty",
       [2] = "achievement_boss_zuldazar_manceroy_mestrah",
       [3] = "ability_racial_childofthesea",
     },
 
     ["LightforgedDraenei"] = {
-      [1] = "achievement_alliedrace_lightforgeddraenei",
+      [1] = "inv_faction_alliancewarfront_round_lightforgeddraenei",
       [2] = "ability_racial_finalverdict",
       [3] = "achievement_alliedrace_lightforgeddraenei",
     },
 
     ["MagharOrc"] = {
-      [1] = "achievement_character_orc_female_brn",
+      [1] = "inv_faction_hordewarfront_round_magharorc",
       [2] = "achievement_character_orc_male_brn",
       [3] = "achievement_character_orc_female_brn",
     },
@@ -669,19 +676,19 @@ local iconDB =
     },
 
     ["NightElf"] = {
-      [1] = "achievement_character_nightelf_female",
+      [1] = "inv_misc_tournaments_symbol_nightelf",
       [2] = "achievement_character_nightelf_male",
       [3] = "achievement_character_nightelf_female",
     },
 
     ["Nightborne"] = {
-      [1] = "ability_racial_masquerade",
+      [1] = "inv_faction_hordewarfront_round_nightborne",
       [2] = "ability_racial_dispelillusions",
       [3] = "ability_racial_masquerade",
     },
 
     ["Orc"] = {
-      [1] = "achievement_character_orc_female",
+      [1] = "inv_misc_tournaments_symbol_orc",
       [2] = "achievement_character_orc_male",
       [3] = "achievement_character_orc_female",
     },
@@ -693,43 +700,43 @@ local iconDB =
     },
 
     ["Scourge"] = {
-      [1] = "achievement_character_undead_female",
+      [1] = "inv_misc_tournaments_symbol_scourge",
       [2] = "achievement_character_undead_male",
       [3] = "achievement_character_undead_female",
     },
 
     ["Tauren"] = {
-      [1] = "achievement_character_tauren_female",
+      [1] = "inv_misc_tournaments_symbol_tauren",
       [2] = "achievement_character_tauren_male",
       [3] = "achievement_character_tauren_female",
     },
 
     ["Troll"] = {
-      [1] = "achievement_character_troll_female",
+      [1] = "inv_misc_tournaments_symbol_troll",
       [2] = "achievement_character_troll_male",
       [3] = "achievement_character_troll_female",
     },
 
     ["VoidElf"] = {
-      [1] = "ability_racial_preturnaturalcalm",
+      [1] = "inv_faction_alliancewarfront_round_voidelf",
       [2] = "ability_racial_entropicembrace",
       [3] = "ability_racial_preturnaturalcalm",
     },
 
     ["Vulpera"] = {
-      [1] = "ability_racial_nosefortrouble",
+      [1] = "ability_racial_fireresist",
       [2] = "ability_racial_nosefortrouble",
       [3] = "ability_racial_nosefortrouble",
     },
 
     ["Worgen"] = {
-      [1] = "ability_racial_viciousness",
+      [1] = "ability_racial_twoforms",
       [2] = "achievement_worganhead",
       [3] = "ability_racial_viciousness",
     },
 
     ["ZandalariTroll"] = {
-      [1] = "inv_zandalarifemalehead",
+      [1] = "inv_faction_talanjisexpedition_round",
       [2] = "inv_zandalarimalehead",
       [3] = "inv_zandalarifemalehead",
     },
@@ -753,35 +760,40 @@ class =
   }, -- class
 glance = 
   {
-    ["-1"                                    ] = L["Custom Icon"],
-    [""                                      ] = L["Undefined"  ],
-    [maskIconNoPath                          ] = L["rpIdentity Icon"],
-    ["Ability_Hunter_BeastCall"              ] = L["Ability_Hunter_BeastCall"              ],
-    ["INV_Inscription_ScrollOfWisdom_01"     ] = L["INV_Inscription_ScrollOfWisdom_01"     ],
-    ["inv_jewelry_ring_14"                   ] = L["inv_jewelry_ring_14"                   ],
-    ["INV_Inscription_inkblack01"            ] = L["INV_Inscription_inkblack01"            ],
-    ["vas_namechange"                        ] = L["vas_namechange"                        ],
-    ["inv_misc_kingsring1"                   ] = L["inv_misc_kingsring1"                   ],
-    ["spell_shadow_mindsteal"                ] = L["spell_shadow_mindsteal"                ],
-    ["INV_Misc_QuestionMark"                 ] = L["INV_Misc_QuestionMark"                 ],
-    ["Achievement_Character_Human_Female"    ] = L["Achievement_Character_Human_Female"    ],
-    ["achievement_halloween_smiley_01"       ] = L["achievement_halloween_smiley_01"       ],
-    ["Achievement_Character_Nightelf_Female" ] = L["Achievement_Character_Nightelf_Female" ],
-    ["achievement_doublerainbow"             ] = L["achievement_doublerainbow"             ],
-    ["trade_archaeology_delicatemusicbox"    ] = L["trade_archaeology_delicatemusicbox"    ],
-    ["achievement_worganhead"                ] = L["achievement_worganhead"                ],
-    ["Achievement_Character_Human_Male"      ] = L["Achievement_Character_Human_Male"      ],
-    ["ability_priest_heavanlyvoice"          ] = L["ability_priest_heavanlyvoice"          ],
-    ["ui_rankedpvp_02_small"                 ] = L["ui_rankedpvp_02_small"                 ],
-    ["Ability_Warrior_StrengthOfArms"        ] = L["Ability_Warrior_StrengthOfArms"        ],
-    ["ui_rankedpvp_03_small"                 ] = L["ui_rankedpvp_03_small"                 ],
-    ["achievement_character_human_female"    ] = L["achievement_character_human_female"    ],
-    ["Ability_Racial_PreturnaturalCalm"      ] = L["Ability_Racial_PreturnaturalCalm"      ],
-    ["ability_bossashvane_icon02"            ] = L["ability_bossashvane_icon02"            ],
-    ["ui_rankedpvp_04_small"                 ] = L["ui_rankedpvp_04_small"                 ],
-    ["petbattle_health"                      ] = L["petbattle_health"                      ],
-    ["achievement_character_bloodelf_female" ] = L["achievement_character_bloodelf_female" ],
-    
+    ["-1"                                      ] = L["Custom Icon"                             ] ,
+    [""                                        ] = L["Undefined"                               ] ,
+    [maskIconNoPath                            ] = L["rpIdentity Icon"                         ] ,
+    ["70_inscription_steamy_romance_novel_kit" ] = L["70_inscription_steamy_romance_novel_kit" ] ,
+    ["ability_bossashvane_icon02"              ] = L["ability_bossashvane_icon02"              ] ,
+    ["ability_deathknight_heartstopaura"       ] = L["ability_deathknight_heartstopaura"       ] ,
+    ["ability_hunter_beastcall"                ] = L["ability_hunter_beastcall"                ] ,
+    ["ability_priest_heavanlyvoice"            ] = L["ability_priest_heavanlyvoice"            ] ,
+    ["ability_racial_preturnaturalcalm"        ] = L["ability_racial_preturnaturalcalm"        ] ,
+    ["ability_racial_viciousness"              ] = L["ability_racial_viciousness"              ] ,
+    ["ability_rogue_bloodyeye"                 ] = L["ability_rogue_bloodyeye"                 ] ,
+    ["ability_warrior_strengthofarms"          ] = L["ability_warrior_strengthofarms"          ] ,
+    ["achievement_doublerainbow"               ] = L["achievement_doublerainbow"               ] ,
+    ["achievement_halloween_smiley_01"         ] = L["achievement_halloween_smiley_01"         ] ,
+    ["inv_inscription_inkblack01"              ] = L["inv_inscription_inkblack01"              ] ,
+    ["inv_inscription_scrollofwisdom_01"       ] = L["inv_inscription_scrollofwisdom_01"       ] ,
+    ["inv_jewelry_ring_14"                     ] = L["inv_jewelry_ring_14"                     ] ,
+    ["inv_legendary_gun"                       ] = L["inv_legendary_gun"                       ] ,
+    ["inv_misc_book_12"                        ] = L["inv_misc_book_12"                        ] ,
+    ["inv_misc_food_147_cake"                  ] = L["inv_misc_food_147_cake"                  ] ,
+    ["inv_misc_grouplooking"                   ] = L["inv_misc_grouplooking"                   ] ,
+    ["inv_misc_kingsring1"                     ] = L["inv_misc_kingsring1"                     ] ,
+    ["inv_misc_questionmark"                   ] = L["inv_misc_questionmark"                   ] ,
+    ["pet_type_magical"                        ] = L["pet_type_magical"                        ] ,
+    ["petbattle_health"                        ] = L["petbattle_health"                        ] ,
+    ["spell_shadow_mindsteal"                  ] = L["spell_shadow_mindsteal"                  ] ,
+    ["trade_archaeology_delicatemusicbox"      ] = L["trade_archaeology_delicatemusicbox"      ] ,
+    ["ui_rankedpvp_01_small"                   ] = L["ui_rankedpvp_01_small"                   ] ,
+    ["ui_rankedpvp_02_small"                   ] = L["ui_rankedpvp_02_small"                   ] ,
+    ["ui_rankedpvp_03_small"                   ] = L["ui_rankedpvp_03_small"                   ] ,
+    ["ui_rankedpvp_04_small"                   ] = L["ui_rankedpvp_04_small"                   ] ,
+    ["vas_namechange"                          ] = L["vas_namechange"                          ] ,
+    ["warrior_disruptingshout"                 ] = L["warrior_disruptingshout"                 ] ,
+
   },
 };
 
@@ -1227,9 +1239,11 @@ local function makeGlances()
       local customIcon = Editor:GetMSP(self.MSP .. "-icon-custom");
       if     iconFile == "-1" and customIcon ~= ""
       then   self:SetImage("Interface\\ICONS\\" .. customIcon)
+             self.image:SetDesaturated(false);
              self.highlight = self.buttonglow;
       elseif iconFile ~= ""
       then   self:SetImage("Interface\\ICONS\\" .. iconFile);
+             self.image:SetDesaturated(false);
              self.highlight = self.buttonglow;
       else   self:SetImage(bigNumbers, edge.L, edge.R, edge.T, edge.B);
              self.image:SetDesaturated(true);

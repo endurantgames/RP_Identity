@@ -19,6 +19,13 @@ function(self, event, ...)
    end
 );
 
+Module:WaitUntil("MODULE_D",
+function(self, event, ...)
+  local AceEvent = LibStub("AceEvent-3.0");
+  AceEvent.RegisterMessage(self, "RP_IDENTITY_UPDATE_IDENTITY",
+    function(self, event, ...) RPTAGS.utils.frames.refreshAll() end);
+end);
+
 Module:WaitUntil("MODULE_C",
 function(self, event, ...)
   local registerFunction = RPTAGS.utils.modules.registerFunction;
