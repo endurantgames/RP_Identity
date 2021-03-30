@@ -205,13 +205,12 @@ function RP_Identity:OnInitialize()
 
       self.db = LibStub("AceDB-3.0"):New("RP_IdentityDB", myDefaults);
 
-      self:SendMessage("RP_IDENTITY_VARIABLES_LOADED");
-
       function self:UpdateIdentity()
             realm = GetNormalizedRealmName();
             me    = UnitName("player") .. "-" .. realm;
             for  field, value in pairs(self.db.profile.myMSP) 
-            do   msp.my[field] = value; 
+            do   print("copying", field);
+                 msp.my[field]             = value; 
                  msp.char[me].field[field] = value;
             end;
             if self.Editor:IsShown() then self.Editor:ReloadTab(); end;
@@ -393,6 +392,7 @@ function RP_Identity:OnInitialize()
           self.options
       );
 
+      self:SendMessage("RP_IDENTITY_READY");
       self:UpdateIdentity();
 end;
 
