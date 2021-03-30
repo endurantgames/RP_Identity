@@ -406,7 +406,7 @@ end;
 _G[addOnName] = RP_Identity;
 
 function RP_Identity:OnLoad() 
-   self.Editor.tabGroup:SelectTab(groupOrder[1]);
+   self.Editor.TabGroup:SelectTab(groupOrder[1]);
 end;
 
 -- msp interactions
@@ -840,7 +840,7 @@ StaticPopupDialogs[POPUP_CLEAR] =
 
 -- editor config 
 --
-local groupOrder = { "basics", "appearance", "glance", "social", "bio", "status"};
+Editor.TabOrder = { "Basics", "Appearance", "Glance", "Social", "Bio", "Status"};
 
 Editor.groups = {
   appearance = { fields = { "iAppearance", "eyes", "height", "weight", "desc",       }, title = L["Group Appearance" ], },
@@ -854,12 +854,6 @@ Editor.groups = {
 
 -- initialization
 --
-local tabList = {};
-for _, groupName in ipairs(groupOrder)
-do  local groupData = Editor.groups[groupName];
-    table.insert(tabList, { value = groupName, text = groupData.title });
-end;
-
 -- pending changes
 
 function Editor:GetMSP(msp) 
@@ -1044,15 +1038,19 @@ local function makeDetachedDropdown(msp, width)
   function main:SetCustomText(    ...) self.custom:SetText(    ...); end;
   function main:SetCustomFocus(   ...) self.custom:SetFocus(   ...); end;
 
-  if   myMenu[initialValue]
-  then main:SetValue(initialValue);
-       main:SetText(myMenu[initialValue]);
-       main:SetCustomDisabled(true); 
-  else main:SetValue("-1"); 
-       main:SetText(myMenu["-1"]);
-       main:SetCustomDisabled(false); 
-       main:SetCustomText(initialValue);
-  end;
+  main.waitUntilAttached = 
+  { function()
+      if   myMenu[initialValue]
+      then main:SetValue(initialValue);
+           main:SetText(myMenu[initialValue]);
+           main:SetCustomDisabled(true); 
+      else main:SetValue("-1"); 
+           main:SetText(myMenu["-1"]);
+           main:SetCustomDisabled(false); 
+           main:SetCustomText(initialValue);
+      end;
+    end,
+  }
 
   local myOrder = menu[msp .. "Order"];
 
@@ -1070,7 +1068,7 @@ local function makeDetachedDropdown(msp, width)
       then self:SetCustomDisabled(false);
            self:SetCustomFocus();
            Editor:SetMSP(self.MSP, custom:GetText())
-      else self:SetCustomDisabled:SetDisabled(true);
+      else self:SetCustomDisabled(true);
            self.Editor:SetMSP(self.MSP, key);
       end;
     end);
@@ -1088,7 +1086,14 @@ local function makeDetachedCustom(msp, width)
   custom:SetCallback("OnEnterPressed", function(self, event, text) 
       Editor:SetMSP(self.MSP, text) 
     end);
-  if detached[msp] then detached[msp].custom = custom; end;
+
+  local unattached = detached[msp];
+  if    unattached
+  then  unattached.custom = custom;
+        if unattached.waitUntilAttached
+        then for _, func in pairs(unattached.waitUntilAttached) do func() end;
+        end;
+  end;
   return { custom };
 end;
 
@@ -1113,7 +1118,7 @@ local function makeDetachedIcon(iconSize, width)
   icon:SetRelativeWidth(width);
 
   function icon:SetIcon(useThisIcon)
-    local iconFile   = useThisIcon or Editor:GetMSP("IC-icon");
+    local iconFile   = useThisIcon or Editor:GetMSP("IC");
     local customIcon = Editor:GetMSP("IC-icon-custom");
 
     if     iconFile == "-1" and customIcon ~= ""
@@ -1125,7 +1130,7 @@ local function makeDetachedIcon(iconSize, width)
 
   icon:SetIcon();
 
-  detached["IC-icon"] = icon;
+  detached.IC = icon;
   return { icon };
 end;
 
@@ -1166,7 +1171,7 @@ local function makeDetachedIconDropdown(width, customWidth)
 
   local myOrder = menu.ICOrder;
 
-  if not menu.ICSorted;
+  if not menu.ICSorted
   then sortingMenu = myMenu;
        table.sort(myOrder, sortMenu)
        menu.ICSorted = true;
@@ -1188,7 +1193,10 @@ local function makeDetachedIconDropdown(width, customWidth)
       end;
     end);
 
-  if detached.IC then dropdown.icon = detached.IC; custom.icon = detached.IC end;
+  if   detached.IC 
+  then dropdown.icon = detached.IC; 
+       custom.icon = detached.IC 
+  end;
 
   return { dropdown, custom };
 
@@ -1253,7 +1261,14 @@ local function makeColorfulEditBox(msp, width, labelWidth)
   return { label, main, picker };
 end;
 
-local function makeGlances()
+Editor.Make = {};
+
+function Editor.Make:Glances()
+  local panelFrame = AceGUI:Create("SimpleGroup");
+  panelFrame:SetLayout("Flow");
+  panelFrame:SetFullWidth(true);
+  panelFrame:AddChild(makeInstruct("Glance"                ));
+
   local preview = {};
   local groupOrder = { "PE1", "PE2", "PE3", "PE4", "PE5" };
   local glancesGroup = AceGUI:Create("SimpleGroup");
@@ -1299,10 +1314,7 @@ local function makeGlances()
   end;
 
   local widgets = { };
-  for _, msp in ipairs(groupOrder) do 
-      createPreviewIcon(msp) 
-      table.insert(widgets, preview[msp])
-  end;
+  for _, msp in ipairs(groupOrder) do panelFrame:AddChild(createPreviewIcon(msp) ) end;
 
   function glancesGroup:SelectGlance(msp)
 
@@ -1411,9 +1423,166 @@ local function makeGlances()
   glancesGroup:SetLayout("Flow");
   glancesGroup:SelectGlance("PE1");
 
-  table.insert(widgets, glancesGroup);
+  panelFrame:AddChild(glancesGroup);
 
-  return widgets;
+  return panelFrame;
+end;
+
+function Editor.Make:Appearance()
+  local panelFrame = AceGUI:Create("SimpleGroup");
+  panelFrame:SetLayout("Flow");
+  panelFrame:SetFullWidth(true);
+  panelFrame:AddChild(makeInstruct("Appearance"))
+  local eyes = makeColorfulEditBox("AE", 0.75, 0.15)
+  panelFrame:AddChild(eyes[1]);
+  panelFrame:AddChild(eyes[2]);
+  panelFrame:AddChild(eyes[3]);
+  local height  = makeEditBox("AH", 0.85, 0.15) 
+  panelFrame:AddChild(height[1]);
+  panelFrame:AddChild(height[2]);
+  local weight = makeEditBox("AW", 0.85, 0.15)
+  panelFrame:AddChild(weight[1]);
+  panelFrame:AddChild(weight[2]);
+  panelFrame:AddChild(makeMultiLine("DE", 12));
+
+  return panelFrame;
+
+end;
+
+function Editor.Make:Basics()
+  local panelFrame = AceGUI:Create("SimpleGroup");
+  panelFrame:SetLayout("Flow");
+  panelFrame:SetFullWidth(true);
+  panelFrame:AddChild(makeInstruct("Basics") );
+  panelFrame:AddChild(makeDetachedIcon(64, 0.15));
+  panelFrame:AddChild(makeDetachedDropdown("PX", 0.15) ); 
+  local name = makeColorfulEditBox("NA", 0.65, 0.15) 
+  panelFrame:AddChild(name[1]);
+  panelFrame:AddChild(name[2]);
+  panelFrame:AddChild(name[3]);
+  panelFrame:AddChild(makeDetachedCustom("PX", 0.15))
+  local pronouns =  makeDropdown("PN", 0.25, 0, 0.25)
+  panelFrame:AddChild(pronouns[1]);
+  panelFrame:AddChild(pronouns[2]);
+  local race = makeEditBox("RA", 0.85, 0.15);
+  panelFrame:AddChild(race[1]);
+  panelFrame:AddChild(race[2]);
+  local class = makeEditBox("RC", 0.85, 0.15)
+  panelFrame:AddChild(class[1]);
+  panelFrame:AddChild(class[2]);
+
+  local detachedIcon =   makeDetachedIconDropdown(0.25, 0.25  )
+  panelFrame:AddChild(detachedIcon);
+  panelFrame:AddChild(detachedIcon);
+
+  return panelFrame;
+end;
+
+function Editor.Make:Bio()
+  local panelFrame = AceGUI:Create("SimpleGroup");
+  panelFrame:SetLayout("Flow");
+  panelFrame:SetFullWidth(true);
+  panelFrame:AddChild(makeInstruct("Bio"));
+  local age = makeEditBox("AG", 0.85, 0.15);
+  panelFrame:AddChild(age[1]);
+  panelFrame:AddChild(age[2]);
+  local birthPlace = makeEditBox("HB", 0.85, 0.15);
+  panelFrame:AddChild(birthPlace[1]);
+  panelFrame:AddChild(birthPlace[2]);
+  local home = makeEditBox("HH", 0.85, 0.15)
+  panelFrame:AddChild(home[1]);
+  panelFrame:AddChild(home[2]);
+  panelFrame:AddChild( makeMultiLine("HI", 12));
+
+  return panelFrame;
+end;
+
+function Editor.Make:Social()
+  local panelFrame = AceGUI:Create("SimpleGroup");
+  panelFrame:SetLayout("Flow");
+  panelFrame:SetFullWidth(true);
+  panelFrame:AddChild(makeInstruct("Social"));
+  local nickname =               makeEditBox("NI", 0.85, 0.15)
+  panelFrame:AddChild(nickname[1])
+  panelFrame:AddChild(nickname[2]);
+  local title = makeEditBox("NT", 0.85, 0.15)
+  panelFrame:AddChild(title[1]);
+  panelFrame:AddChild(title[2]);
+  local house = makeEditBox("NH", 0.85, 0.15) 
+  panelFrame:AddChild(house[1]);
+  panelFrame:AddChild(house[2]);
+  local motto = makeEditBox("MO", 0.85, 0.15)
+  panelFrame:AddChild(motto[1]);
+  panelFrame:AddChild(motto[2]);
+
+  return panelFrame;
+end;
+
+function Editor.Make:Status()
+  local panelFrame = AceGUI:Create("SimpleGroup");
+  panelFrame:SetLayout("Flow");
+  panelFrame:SetFullWidth(true);
+  panelFrame:AddChild(makeInstruct("Status"));
+  local rpStatus = makeDropdown("FC", 0.25, 0.25)
+  panelFrame:AddChild(rpStatus[1]);
+  panelFrame:AddChild(rpStatus[2]);
+  local rpStyle  = makeDropdown("FR", 0.25, 0.25)
+  panelFrame:AddChild(rpStyle[1])
+  panelFrame:AddChild(rpStyle[2])
+  panelFrame:AddChild(makeMultiLine("CU", 12, 0.5))
+  panelFrame:AddChild(makeMultiLine("CO", 12, 0.5))
+  return panelFrame;
+end;
+
+Editor.TabOrder = { "Basics", "Appearance", "Glance", "Social", "Bio", "Status" };
+Editor.TabList =
+{ { value = "Basics", text = L["Group Basics"], }
+  { value = "Appearance", text = L["Group Appearance"] },
+  { value = "Glance", text = L["Group Glance"] },
+  { value = "Social", text = L["Group Social"] },
+  { value = "Bio", text = L["Group Bio"] },
+  { value = "Status", text = L["Group Status" ] },
+};
+
+Editor.TabGroup = AceGUI:Create("TabGroup");
+Editor.TabGroup:SetFullWidth(true);
+Editor.TabGroup:SetFullHeight(true);
+Editor.TabGroup:SetLayout("Flow");
+Editor.TabGroup:SetTabs(Editor.TabList);
+Editor.TabGroup.Editor = Editor;
+
+Editor:AddChild(Editor.TabGroup);
+
+function Editor.TabGroup:LoadTab(tab)
+  self:ReleaseChildren();
+
+  self.scrollContainer = AceGUI:Create("SimpleGroup");
+  self.scrollContainer:SetFullWidth(true);
+  self.scrollContainer:SetFullHeight(true);
+  self.scrollContainer:SetLayout("Fill");
+  self:AddChild(self.scrollContainer);
+  self.scrollFrame = AceGUI:Create("ScrollFrame");
+  self.scrollFrame:SetLayout("Flow");
+  self.scrollContainer:AddChild(self.scrollFrame);
+  self.scrollFrame:AddChild(self.Editor.Make[tab](self.Editor));
+  self.Editor.currentGroup = tab;
+end;
+
+Editor.TabGroup:SetCallback("OnGroupSelected",
+  function(self, event, group)
+    self.Editor:ApplyPending();
+    self:LoadTab(group);
+  end);
+
+function Editor:ReloadTab()
+  self.TabGroup:LoadTab(self.currentGroup or self:TabOrder[1]);
+  self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile() );
+end;
+
+function RP_Identity:OpenOptions()
+  InterfaceOptionsFrame:Show();
+  InterfaceOptionsFrame_OpenToCategory(self.addOnTitle)
+  self.Editor:Hide();
 end;
 
 --[===[
@@ -1424,113 +1593,13 @@ Editor.groups = {
   basics =     { fields = { "icon", "detachedIcon", "honorific", "name", 
                             "honorificCustom", "race", "class", "pronouns" }, title = L["Group Basics"     ], },
   bio =        { fields = { "age", "birthPlace", "home", "history"         }, title = L["Group Bio"        ], },
-  glance =     { fields = { "glances"                                      }, title = L["Group Glance"     ], },
   social =     { fields = { "nickname", "house", "motto", "title "         }, title = L["Group Social"     ], },
+
   status =     { fields = { "rpStyle", "rpStatus", "currently", "oocInfo"  }, title = L["Group Status"     ], },
+  glance =     { fields = { "glances"                                      }, title = L["Group Glance"     ], },
 };
 --]===]
 
-local frameConstructor = 
-{ 
-      --[===[  
-        makeEditBox(msp, width, labelWidth)
-        makeDropdown(msp, width, customW)
-        makeColorfulEditBox(msp, width, labelWidth)
-        makeMultiLine(msp, lines)
-        makeIcon(msp, iconSize, iconWidth, dropdownWidth, customWidth)
-        makeInstruct(text)
-      --]===]
-
-
-  iBasics         = function() return makeInstruct("Basics"                ) end,
-  icon            = function() return makeDetachedIcon(64, 0.15            ) end,
-  honorific       = function() return makeDetachedDropdown("PX", 0.15      ) end,
-  name            = function() return makeColorfulEditBox("NA", 0.65 0.15  ) end,
-  honorificCustom = function() return makeDetachedCustom("PX", 0.15        ) end,
-  pronouns        = function() return makeDropdown("PN", 0.25, 0, 0.25     ) end,
-  race            = function() return makeEditBox("RA", 0.85, 0.15         ) end,
-  class           = function() return makeEditBox("RC", 0.85, 0.15         ) end,
-  iconDetached    = function() return makeDetachedIconDropdown(0.25, 0.25  ) end,
-  -- appearance
-  iAppearance     = function() return makeInstruct("Appearance"            ) end,
-  eyes            = function() return makeColorfulEditBox("AE", 0.75, 0.15 ) end,
-  height          = function() return makeEditBox("AH", 0.85, 0.15         ) end,
-  weight          = function() return makeEditBox("AW", 0.85, 0.15         ) end,
-  desc            = function() return makeMultiLine("DE", 12               ) end,
-  -- glances
-  iGlance         = function() return makeInstruct("Glance"                ) end,
-  glances         = function() return makeGlances(                         ) end,
-  -- social
-  iSocial         = function() return makeInstruct("Social"                ) end,
-  nickname        = function() return makeEditBox("NI", 0.85, 0.15         ) end,
-  title           = function() return makeEditBox("NT", 0.85, 0.15         ) end,
-  house           = function() return makeEditBox("NH", 0.85, 0.15         ) end,
-  motto           = function() return makeEditBox("MO", 0.85, 0.15         ) end,
-  -- bio
-  iBio            = function() return makeInstruct("Bio"                   ) end,
-  age             = function() return makeEditBox("AG", 0.85, 0.15         ) end,
-  birthPlace      = function() return makeEditBox("HB", 0.85, 0.15         ) end,
-  home            = function() return makeEditBox("HH", 0.85, 0.15         ) end,
-  history         = function() return makeMultiLine("HI", 12               ) end,
-  -- status
-  iStatus         = function() return makeInstruct("Status"                ) end,
-  rpStatus        = function() return makeDropdown("FC", 0.25, 0.25        ) end,
-  rpStyle         = function() return makeDropdown("FR", 0.25, 0.25        ) end,
-  currently       = function() return makeMultiLine("CU", 12, 0.5          ) end,
-  oocInfo         = function() return makeMultiLine("CO", 12, 0.5          ) end,
-
-};
-
-Editor.tabGroup = AceGUI:Create("TabGroup");
-Editor.tabGroup:SetFullWidth(true);
-Editor.tabGroup:SetFullHeight(true);
-Editor.tabGroup:SetLayout("Flow");
-Editor.tabGroup:SetTabs(tabList);
-Editor.tabGroup.Editor = Editor;
-Editor:AddChild(Editor.tabGroup);
-
-function Editor.tabGroup:LoadTab(tab)
-  self:ReleaseChildren();
-
-  self.scrollContainer = AceGUI:Create("SimpleGroup");
-  self.scrollContainer:SetFullWidth(true);
-  self.scrollContainer:SetFullHeight(true);
-  self.scrollContainer:SetLayout("Fill");
-
-  self:AddChild(self.scrollContainer);
-
-  self.scrollFrame = AceGUI:Create("ScrollFrame");
-  self.scrollFrame:SetLayout("Flow");
-
-  self.scrollContainer:AddChild(self.scrollFrame);
-
-  local groupData = self.Editor.groups[tab];
-  for _, fieldName in ipairs(groupData.fields)
-  do  local constructor = frameConstructor[fieldName];
-      for _, widget in ipairs(constructor())
-      do  self.scrollFrame:AddChild(widget);
-      end;
-  end;
-
-  self.Editor.currentGroup = tab;
-end;
-
-Editor.tabGroup:SetCallback("OnGroupSelected",
-  function(self, event, group)
-    self.Editor:ApplyPending();
-    self:LoadTab(group);
-  end);
-
-function Editor:ReloadTab()
-  self.tabGroup:LoadTab(self.currentGroup or groupOrder[1]);
-  self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile() );
-end;
-
-function RP_Identity:OpenOptions()
-  InterfaceOptionsFrame:Show();
-  InterfaceOptionsFrame_OpenToCategory(self.addOnTitle)
-  self.Editor:Hide();
-end;
 -- editor buttons
 --
 local buttonSize = 85;
@@ -1631,11 +1700,11 @@ function RP_Identity:SetStatus(value)
 end;
 
 function RP_Identity:ToggleStatus(value)
-  if self.db.profile.myMSP.FC == "1"
-  then self:SetStatus("2");
+  if     self.db.profile.myMSP.FC == "1"
+  then   self:SetStatus("2");
   elseif self.db.profile.myMSP.FC == "2"
-  then self:SetStatus("1")
-  else self:NotifyStatus();
+  then   self:SetStatus("1")
+  else   self:NotifyStatus();
   end;
 end;
 
@@ -1669,7 +1738,8 @@ SlashCmdList["RP_IDENTITY"] =
     elseif cmd:match("^option") or cmd:match("^config") then RP_Identity:OpenOptions();
     elseif cmd == "toggle" and param[1] == "status"     then RP_Identity:ToggleStatus();
     elseif cmd == "toggle"                              then RP_Identity:ToggleEditorFrame();
-    elseif cmd == "open"                                then RP_Identity.Editor:ReloadTab(); RP_Identity.Editor.frame:Show();
+    elseif cmd == "open"                                then RP_Identity.Editor:ReloadTab(); 
+                                                             RP_Identity.Editor.frame:Show();
     elseif cmd == "status" and param[1] == "ooc"        then RP_Identity:SetStatus("1");
     elseif cmd == "status" and param[1] == "ic"         then RP_Identity:SetStatus("2");
     elseif cmd == "status" and not param[1]             then RP_Identity:NotifyStatus();
