@@ -146,6 +146,7 @@ local myDefaults =
       -- GS                = UnitSex("player") .. "",
       -- GU                = UnitGUID("player"),
       -- TR                = IsTrialAccount() and "1" or "0",
+      -- VP                = "1",
       AE                   = "",
       AG                   = "",
       AH                   = "",
@@ -169,7 +170,6 @@ local myDefaults =
       RA                   = UnitRace("player"),
       RC                   = UnitClass("player"),
       VA                   = RP_Identity.addOnTitle .. "/" .. RP_Identity.addOnVersion,
-      VP                   = "1",
       ["PE1-icon"        ] = "",
       ["PE1-icon-custom" ] = "",
       ["PE1-text"        ] = "",
@@ -709,6 +709,7 @@ class =
     ["DRUID"       ] = "ClassIcon_Druid",
     ["DEMONHUNTER" ] = "ClassIcon_DemonHunter",
   }, -- class
+
 popularIcons = 
   { ["70_inscription_steamy_romance_novel_kit" ] = L["70_inscription_steamy_romance_novel_kit" ] ,
     ["ability_bossashvane_icon02"              ] = L["ability_bossashvane_icon02"              ] ,
@@ -840,6 +841,7 @@ StaticPopupDialogs[POPUP_CLEAR] =
 
 -- editor config 
 --
+--[===[
 Editor.TabOrder = { "Basics", "Appearance", "Glance", "Social", "Bio", "Status"};
 
 Editor.groups = {
@@ -851,6 +853,7 @@ Editor.groups = {
   social =     { fields = { "iSocial", "nickname", "house", "motto", "title "        }, title = L["Group Social"     ], },
   status =     { fields = { "iStatus", "rpStyle", "rpStatus", "currently", "oocInfo" }, title = L["Group Status"     ], },
 };
+--]===]
 
 -- initialization
 --
@@ -906,42 +909,6 @@ local function hideTooltip(self, event)
   ResetCursor();
 end;
 
-local function fixEditBox(widget)
-  local sides = { "Left", "Right", "Middle" };
-  local function hide() 
-    hideTooltip()
-    if widget.editbox:HasFocus() then return end;
-    for _, side in ipairs(sides) 
-    do widget.editbox[side]:SetVertexColor(1, 1, 1, 0); 
-    end; 
-  end;
-  local function show() 
-    for _, side in ipairs(sides) 
-    do widget.editbox[side]:SetVertexColor(unpack(RP_Identity.addOnColor)) 
-    end;  
-  end;
-  local function hover() 
-    showTooltip(widget, "OnEnter", widget.tooltipMSP or widget.MSP);
-    if widget.editbox:HasFocus() then return end;
-    for _, side in ipairs(sides) 
-    do widget.editbox[side]:SetVertexColor(1, 1, 0, 1); 
-    end 
-  end;
-  hide();
-  widget.editbox:SetScript("OnEditFocusGained", show)
-  widget.editbox:SetScript("OnEditFocusLost", hide)
-  widget:SetCallback("OnEnter", hover);
-  widget:SetCallback("OnLeave", hide);
-end;
-    
-local function makeInstruct(category)
-  local widget = AceGUI:Create("Label");
-  widget:SetText(L["Instruct " .. category]);
-  widget:SetColor(1, 1, 1, 1);
-  widget:SetFullWidth(true);
-  return { widget };
-end;
-
 local function makeLabel(msp, width)
   local label = AceGUI:Create("Label");
   label.MSP = msp;
@@ -951,259 +918,238 @@ local function makeLabel(msp, width)
   return label;
 end;
 
-local function makeEditBox(msp, width, labelWidth)
-  local label = makeLabel(msp, labelWidth);
-  local main = AceGUI:Create("EditBox");
-  fixEditBox(main);
-  main:SetRelativeWidth(width);
-  main.MSP = msp;
-  main:SetText(Editor:GetMSP(msp));
-  main:SetCallback("OnEnterPressed", function(self, event, text) Editor:SetMSP(self.MSP, text); end);
-  return { label, main };
+local function makeSpacer(width)
+  local spacer = AceGUI:Create("Label");
+  spacer:SetText("");
+  spacer:SetRelativeWidth(width or 0.05)
+  return spacer;
 end;
 
-local function makeDropdown(msp, width, customW)
+local function makeEditBox(msp, width)
+  local editbox = AceGUI:Create("EditBox");
 
-  local custom = AceGUI:Create("EditBox");
-  fixEditBox(custom);
+  local sides = { "Left", "Right", "Middle" };
 
-  custom:SetRelativeWidth(customW > 0 and customW or 0.1)
-  custom.MSP = msp;
-  custom.tooltipMSP = msp .. "-custom";
-  custom:SetCallback("OnEnterPressed", 
-    function(self, event, text) 
-      Editor:SetMSP(self.MSP, text) 
-    end);
-  
-  local main = AceGUI:Create("Dropdown");
-  main:SetRelativeWidth(width > 0 and width or 0.1);
-  main.MSP = msp;
-  main:SetCallback("OnEnter", showTooltip);
-  main:SetCallback("OnLeave", hideTooltip);
-
-  main.custom = custom;
-
-  local myMenu = menu[msp];
-  local initialValue = Editor:GetMSP(msp);
-
-  if   myMenu[initialValue]
-  then main:SetValue(initialValue);
-       main:SetText(myMenu[initialValue]);
-       custom:SetDisabled(true); 
-  else main:SetValue("-1"); 
-       main:SetText(myMenu["-1"]);
-       custom:SetDisabled(false); 
-       custom:SetText(initialValue);
+  -- helper functions
+  local function hide() 
+    hideTooltip();
+    if editbox.editbox:HasFocus() then return end;
+    for _, side in ipairs(sides) 
+    do editbox.editbox[side]:SetVertexColor(1, 1, 1, 0); 
+    end; 
   end;
 
-  local myOrder = menu[msp .. "Order"];
-
-  if not menu[msp .. "Sorted"]
-  then sortingMenu = myMenu;
-       table.sort(myOrder, sortMenu)
-       menu[msp .. "Sorted"] = true;
+  local function show() 
+    for _, side in ipairs(sides) 
+    do editbox.editbox[side]:SetVertexColor(unpack(RP_Identity.addOnColor)) 
+    end;  
   end;
 
-  main:SetList(myMenu, myOrder);
-
-  main:SetCallback("OnValueChanged", 
-    function(self, event, key)
-      if key == "-1"
-      then custom:SetDisabled(false);
-           custom:SetFocus();
-           Editor:SetMSP(self.MSP, custom:GetText())
-      else custom:SetDisabled(true);
-           Editor:SetMSP(self.MSP, key);
-      end;
-    end);
-  return { main, custom };
-end;
-
-local detached = {};
-
-local function makeDetachedDropdown(msp, width)
-
-  local main = AceGUI:Create("Dropdown");
-  main:SetRelativeWidth(width > 0 and width or 0.1);
-  main.MSP = msp;
-  main:SetCallback("OnEnter", showTooltip);
-  main:SetCallback("OnLeave", hideTooltip);
-
-  main.custom = custom;
-
-  local myMenu = menu[msp];
-  local initialValue = Editor:GetMSP(msp);
-
-  function main:SetCustomDisabled(...) self.custom:SetDisabled(...); end;
-  function main:SetCustomText(    ...) self.custom:SetText(    ...); end;
-  function main:SetCustomFocus(   ...) self.custom:SetFocus(   ...); end;
-
-  main.waitUntilAttached = 
-  { function()
-      if   myMenu[initialValue]
-      then main:SetValue(initialValue);
-           main:SetText(myMenu[initialValue]);
-           main:SetCustomDisabled(true); 
-      else main:SetValue("-1"); 
-           main:SetText(myMenu["-1"]);
-           main:SetCustomDisabled(false); 
-           main:SetCustomText(initialValue);
-      end;
-    end,
-  }
-
-  local myOrder = menu[msp .. "Order"];
-
-  if not menu[msp .. "Sorted"]
-  then sortingMenu = myMenu;
-       table.sort(myOrder, sortMenu)
-       menu[msp .. "Sorted"] = true;
+  local function hover() 
+    showTooltip(editbox, "OnEnter", editbox.tooltipMSP or editbox.MSP);
+    if editbox.editbox:HasFocus() then return end;
+    for _, side in ipairs(sides) 
+    do editbox.editbox[side]:SetVertexColor(1, 1, 0, 1); 
+    end 
   end;
 
-  main:SetList(myMenu, myOrder);
+  editbox:SetRelativeWidth(width);
+  editbox.MSP = msp;
+  editbox:SetText(Editor:GetMSP(msp));
+  hide();
 
-  main:SetCallback("OnValueChanged", 
-    function(self, event, key)
-      if key == "-1"
-      then self:SetCustomDisabled(false);
-           self:SetCustomFocus();
-           Editor:SetMSP(self.MSP, custom:GetText())
-      else self:SetCustomDisabled(true);
-           self.Editor:SetMSP(self.MSP, key);
-      end;
-    end);
-  detached[msp] = main;
-  return { main };
-end;
+  editbox.editbox:SetScript("OnEditFocusGained", show)
+  editbox.editbox:SetScript("OnEditFocusLost",   hide)
+  editbox:SetCallback("OnEnter", hover);
+  editbox:SetCallback("OnLeave", hide);
 
-local function makeDetachedCustom(msp, width)
-  local custom = AceGUI:Create("EditBox");
-  fixEditBox(custom);
+  editbox.PlaceHolder = editbox.editbox:CreateFontString(nil, "BORDER", "GameFontNormalGraySmall");
+  editbox.PlaceHolder:SetPoint("LEFT");
 
-  custom:SetRelativeWidth(width)
-  custom.MSP = msp;
-  custom.tooltipMSP = msp .. "-custom";
-  custom:SetCallback("OnEnterPressed", function(self, event, text) 
-      Editor:SetMSP(self.MSP, text) 
-    end);
+  function editbox:HidePlaceholder() self.PlaceHolder:SetText(); end;
+  function editbox:ShowPlaceholder() self.PlaceHolder:SetText(self.placeHolderText) end;
 
-  local unattached = detached[msp];
-  if    unattached
-  then  unattached.custom = custom;
-        if unattached.waitUntilAttached
-        then for _, func in pairs(unattached.waitUntilAttached) do func() end;
-        end;
+  function editbox:SetPlaceholder(text)
+    self.placeHolderText = text;
+    -- editbox:ApplyPlaceholder();
   end;
-  return { custom };
-end;
 
-local function makeMultiLine(msp, lines, width)
-  local main = AceGUI:Create("MultiLineEditBox");
-  main:SetLabel(L["Label " .. msp]);
-  main:SetNumLines(lines or 3);
-  if not width then main:SetFullWidth(true); else main:SetRelativeWidth(width) end;
-  main.MSP = msp;
-  main:SetCallback("OnEnter", showTooltip);
-  main:SetCallback("OnLeave", hideTooltip);
-  main:SetText( Editor:GetMSP(msp) );
-  main:SetCallback("OnEnterPressed", function(self, event, text) Editor:SetMSP(self.MSP, text); end);
-  return { main };
-end;
+  function editbox:ApplyPlaceholder()
+    -- local text = self:GetText();
+    -- if text and text ~= "" then self:HidePlaceholder() else self:ShowPlaceholder(); end;
+  end;
 
-local function makeDetachedIcon(iconSize, width)
-  local icon = AceGUI:Create("Icon");
-  icon.MSP = "IC";
-  icon.tooltipMSP = "IC-icon";
-  icon:SetImageSize(iconSize, iconSize);
-  icon:SetRelativeWidth(width);
+  editbox:SetCallback("OnTextChanged", 
+    function(self, event, text)
+      self:ApplyPlaceholder();
+    end);
 
-  function icon:SetIcon(useThisIcon)
-    local iconFile   = useThisIcon or Editor:GetMSP("IC");
-    local customIcon = Editor:GetMSP("IC-icon-custom");
-
-    if     iconFile == "-1" and customIcon ~= ""
-    then   self:SetImage("Interface\\ICONS\\" .. customIcon)
-    elseif iconFile ~= ""
-    then   self:SetImage("Interface\\ICONS\\" .. iconFile);
+  local function editbox_OnEnterPressed(self, event, text)
+    if self.linkedColorPicker
+    then text = self.linkedColorPicker:ApplyColor(text);
     end;
+    self:ApplyPlaceholder(text);
+    self:ClearFocus();
+
+    Editor:SetMSP(self.MSP, text);
   end;
 
-  icon:SetIcon();
+  editbox:SetCallback("OnEnterPressed", editbox_OnEnterPressed);
 
-  detached.IC = icon;
-  return { icon };
+  return editbox;
+end;
+    
+local function makeInstruct(category)
+  local widget = AceGUI:Create("Label");
+  widget:SetText(L["Instruct " .. category]);
+  widget:SetColor(1, 1, 1, 1);
+  widget:SetFullWidth(true);
+  return widget;
 end;
 
-local function makeDetachedIconDropdown(width, customWidth)
+local function makeDropdown(msp, width, menuID)
 
-  local custom = AceGUI:Create("EditBox");
-  fixEditBox(custom);
+  menuID = menuID or msp;
 
-  custom:SetRelativeWidth(customWidth)
-  custom.MSP = "IC";
-  custom.tooltipMSP = "IC-icon-custom";
-  custom:SetCallback("OnEnterPressed", 
-    function(self, event, text) 
-      Editor:SetMSP("IC", text) 
-      self.icon:SetIcon();
-    end);
-  
   local dropdown = AceGUI:Create("Dropdown");
   dropdown:SetRelativeWidth(width)
-  dropdown.MSP = "IC";
+  dropdown.MSP = msp;
+
+  dropdown:SetLabel(L["Label " .. msp]);
+
+  local function Dropdown_setValueFromKey(self, event, key, not_interactive)
+    if     self.hasCustom and (key == "-1")
+    then   self.custom:SetDisabled(false);
+           if not not_interactive then self.custom:SetFocus() end;
+           self:SetText(self.menu["-1"]);
+           self:SetValue("-1");
+           Editor:SetMSP(self.MSP, self.custom:GetText());
+    elseif self.hasCustom and not self.menu[key]
+    then   self.custom:SetDisabled(false);
+           if not not_interactive then self.custom:SetFocus() end;
+           self:SetText(self.menu["-1"]);
+           self:SetValue("-1");
+           Editor:SetMSP(self.MSP, self.custom:GetText());
+    elseif self.hasCustom and self.menu[key]
+    then   self.custom:SetDisabled(true);
+           self:SetText(self.menu[key]);
+           self:SetValue(key);
+           Editor:SetMSP(self.MSP, key);
+    elseif self.menu[key]
+    then   self:SetValue(key);
+           self:SetText(self.menu[key])
+           Editor:SetMSP(self.MSP, key);
+    else   self:SetValue("");
+           self:SetText(self.menu[""]);
+           Editor:SetMSP(self.MSP, "");
+    end;
+    if self.linkedIcon then self.linkedIcon:SetIcon(); end;
+  end;
+
+  dropdown.SetValueFromKey = Dropdown_setValueFromKey;
+
+  local function Dropdown_runInitialize(self, custom)
+    self.menu = menu[menuID];
+    self.order = menu[menuID .. "Order"];
+
+    if not menu[menuID .. "Sorted"]
+    then sortingMenu = self.menu;
+         table.sort(self.order, sortMenu);
+         menu[menuID .. "Sorted"] = true;
+    end;
+
+    self:SetList(self.menu, self.order);
+
+    if  custom then self.hasCustom = true; self.custom = custom; end;
+
+    self:SetValueFromKey( nil, Editor:GetMSP(self.MSP) , true);
+    
+  end;
+
+  dropdown.RunInitialize = Dropdown_runInitialize;
+
+  dropdown:SetCallback("OnValueChanged", Dropdown_setValueFromKey);
   dropdown:SetCallback("OnEnter", showTooltip);
   dropdown:SetCallback("OnLeave", hideTooltip);
 
-  dropdown.custom = custom;
-
-  local myMenu = menu.IC;
-  local initialValue = Editor:GetMSP("IC");
-
-  if   myMenu[initialValue]
-  then dropdown:SetValue(initialValue);
-       dropdown:SetText(myMenu[initialValue]);
-       custom:SetDisabled(true); 
-  else dropdown:SetValue("-1"); 
-       dropdown:SetText(myMenu["-1"]);
-       custom:SetDisabled(false); 
-       custom:SetText(initialValue);
-  end;
-
-  local myOrder = menu.ICOrder;
-
-  if not menu.ICSorted
-  then sortingMenu = myMenu;
-       table.sort(myOrder, sortMenu)
-       menu.ICSorted = true;
-  end;
-
-  dropdown:SetList(myMenu, myOrder);
-
-  dropdown:SetCallback("OnValueChanged", 
-    function(self, event, key)
-      if   key == "-1"
-      then custom:SetDisabled(false);
-           custom:SetFocus();
-           self.icon:SetIcon(custom:GetText())
-           Editor:SetMSP("IC", custom:GetText())
-           self.icon:SetIcon()
-      else custom:SetDisabled(true);
-           Editor:SetMSP("IC", key);
-           self.icon:SetIcon(key)
-      end;
-    end);
-
-  if   detached.IC 
-  then dropdown.icon = detached.IC; 
-       custom.icon = detached.IC 
-  end;
-
-  return { dropdown, custom };
-
+  return dropdown;
 end;
 
-local function makeColorfulEditBox(msp, width, labelWidth)
-  local ADD_FMT = "|cff%02x%02x%02x%s|r";
+local function makeCustom(msp, width)
+  local custom = AceGUI:Create("EditBox");
+  local sides = { "Left", "Right", "Middle" };
+
+  custom.labelText = L["Label " .. msp .. "-custom"];
+
+  -- helper functions
+  local function hide() 
+    hideTooltip();
+    if custom.editbox:HasFocus() then return end;
+    for _, side in ipairs(sides) 
+    do custom.editbox[side]:SetVertexColor(1, 1, 1, 0); 
+    end; 
+  end;
+
+  local function show() 
+    for _, side in ipairs(sides) 
+    do custom.editbox[side]:SetVertexColor(unpack(RP_Identity.addOnColor)) 
+    end;  
+  end;
+
+  local function hover() 
+    showTooltip(custom, "OnEnter", custom.tooltipMSP or custom.MSP);
+    if custom.editbox:HasFocus() then return end;
+    for _, side in ipairs(sides) 
+    do custom.editbox[side]:SetVertexColor(1, 1, 0, 1); 
+    end 
+  end;
+
+  custom:SetRelativeWidth(width);
+  custom.MSP = msp;
+  custom.tooltipMSP = msp .. "-custom";
+  hide();
+
+  custom.editbox:SetScript("OnEditFocusGained", show)
+  custom.editbox:SetScript("OnEditFocusLost",   hide)
+  custom:SetCallback("OnEnter", hover);
+  custom:SetCallback("OnLeave", hide);
+
+  local function Custom_onEnterPressed(self, event, text)
+    Editor:SetMSP(self.MSP, text);
+    if self.linkedIcon then self.linkedIcon:SetIcon(); end;
+  end;
+
+  custom:SetCallback("OnEnterPressed", Custom_onEnterPressed);
+  custom:SetLabel(L["Label " .. msp .. "-custom"]) 
+
+  return custom;
+end;
+
+local function makeMultiLine(msp, lines, width)
+  local mleditbox = AceGUI:Create("MultiLineEditBox");
+
+  mleditbox:SetLabel(L["Label " .. msp]);
+  mleditbox:SetNumLines(lines or 3);
+
+  if not width then mleditbox:SetFullWidth(true); else mleditbox:SetRelativeWidth(width) end;
+
+  mleditbox.MSP = msp;
+  mleditbox:SetCallback("OnEnter", showTooltip);
+  mleditbox:SetCallback("OnLeave", hideTooltip);
+
+  mleditbox:SetText( Editor:GetMSP(msp) );
+
+  local function MultiLine_onEnterPressed(self, event, text)
+    Editor:SetMSP(self.MSP, text)
+  end;
+  mleditbox:SetCallback("OnEnterPressed", MultiLine_onEnterPressed);
+
+  return mleditbox;
+end;
+
+local function makeColorPicker(msp)
+
+  local ADD_FMT     = "|cff%02x%02x%02x%s|r";
   local EXTRACT_FMT = "^|cff(%x%x)(%x%x)(%x%x)(.+)|r$";
 
   local function addColor(r, g, b, name) 
@@ -1220,45 +1166,40 @@ local function makeColorfulEditBox(msp, width, labelWidth)
            name or str
   end;
 
-  local label = makeLabel(msp, labelWidth);
-
-  local main = AceGUI:Create("EditBox");
-  fixEditBox(main);
-  main:SetRelativeWidth(width); 
-  main.MSP = msp;
-  main:SetCallback("OnEnter", showTooltip);
-  main:SetCallback("OnLeave", hideTooltip);
-
   local picker = AceGUI:Create("ColorPicker");
   picker.MSP = msp;
   picker:SetHasAlpha(false);
-  picker:SetRelativeWidth(0.1);
-  picker.main = main;
+  picker:SetRelativeWidth(0.05);
   picker.tooltipMSP = "Color";
   picker:SetCallback("OnEnter", showTooltip);
   picker:SetCallback("OnLeave", hideTooltip);
+  
+  local function picker_runInitialize(self, linkedEditBox)
+    self.linkedEditBox = linkedEditBox;
+    linkedEditBox.linkedColorPicker = self;
+    local initialValue = Editor:GetMSP(msp);
+    local r, g, b, text = extractColor(initialValue);
+    r, g, b = r or 1, g or 1, b or 1;
+    self:SetColor(r, g, b, 1);
+    self.r, self.g, self.b = r, g, b;
+    linkedEditBox:SetText(text);
+  end;
 
-  picker:SetCallback("OnValueConfirmed",
-    function(self, event, r, g, b, a)
+  picker.RunInitialize = picker_runInitialize;
+
+  local function picker_applyColor(self, text) return addColor(self.r, self.g, self.b, text) end;
+
+  picker.ApplyColor = picker_applyColor;
+
+  local function picker_OnValueConfirmed(self, event, r, g, b, a)
       Editor:SetMSP(self.MSP, addColor(r, g, b, self.main:GetText() ));
       self.r, self.g, self.b = r, g, b;
-    end);
-              
-  main.picker = picker;
+  end;
 
-  local initialValue = Editor:GetMSP(msp);
-  local r, g, b, name = extractColor(initialValue);
-  r, g, b = r or 1, g or 1, b or 1;
-  picker:SetColor(r, g, b, 1);
-  picker.r, picker.g, picker.b = r, g, b;
-  main:SetText(name);
+  picker:SetCallback("OnValueConfirmed", picker_OnValueComfirmed);
 
-  main:SetCallback("OnEnterPressed",
-    function(self, event, text)
-      Editor:SetMSP(self.MSP, addColor(self.picker.r, self.picker.g, self.picker.b, text));
-    end);
+  return picker;
 
-  return { label, main, picker };
 end;
 
 Editor.Make = {};
@@ -1267,13 +1208,14 @@ function Editor.Make:Glances()
   local panelFrame = AceGUI:Create("SimpleGroup");
   panelFrame:SetLayout("Flow");
   panelFrame:SetFullWidth(true);
-  panelFrame:AddChild(makeInstruct("Glance"                ));
 
-  local preview = {};
+  panelFrame:AddChild(makeInstruct("Glances"));
+
   local groupOrder = { "PE1", "PE2", "PE3", "PE4", "PE5" };
   local glancesGroup = AceGUI:Create("SimpleGroup");
 
   local function createPreviewIcon(msp)
+
     local bigNumbers = "Interface\\Timer\\BigTimerNumbers";
     local numberCoords = 
     { PE1 = { L = 1/4, R = 2/4, T = 0/3, B = 1/3 },
@@ -1282,10 +1224,12 @@ function Editor.Make:Glances()
       PE4 = { L = 0/4, R = 1/4, T = 1/3, B = 2/3 },
       PE5 = { L = 1/4, R = 2/4, T = 1/3, B = 2/3 },
     }
+
     local icon = AceGUI:Create("IconNoHighlight")
 
     icon.MSP        = msp;
     icon.tooltipMSP = msp .. "-icon";
+
     icon:SetRelativeWidth(0.20);
     icon:SetImageSize(64, 64);
 
@@ -1303,18 +1247,18 @@ function Editor.Make:Glances()
       end;
     end;
 
-    local function icon_OnClick(self, event) 
-     glancesGroup:SelectGlance(self.MSP) 
-    end;
-
+    local function icon_OnClick(self, event) glancesGroup:SelectGlance(self.MSP) end;
     icon:SetCallback("OnClick", icon_OnClick);
     icon:SetIcon();
-    preview[msp] = icon;
 
+    return icon;
   end;
 
-  local widgets = { };
-  for _, msp in ipairs(groupOrder) do panelFrame:AddChild(createPreviewIcon(msp) ) end;
+  local previewIcon = {};
+  for _, msp in ipairs(groupOrder) 
+  do  previewIcon[msp] = createPreviewIcon(msp); 
+      panelFrame:AddChild(previewIcon[msp]);
+  end;
 
   function glancesGroup:SelectGlance(msp)
 
@@ -1323,101 +1267,62 @@ function Editor.Make:Glances()
     local heading = AceGUI:Create("Heading");
     heading:SetFullWidth(true);
     heading:SetText(L["Label " .. msp]);
+
     self:AddChild(heading);
 
-    local iconPreview = preview[msp];
-
-    local custom = AceGUI:Create("EditBox");
-    fixEditBox(custom);
-    custom:SetRelativeWidth(0.5);
-    custom.MSP = msp .. "-icon";
-    custom.tooltipMSP = msp .. "-icon-custom";
+    local custom = makeCustom(msp .. "-icon", 0.5);
     custom:SetLabel(L["Label " .. msp .. "-icon-custom"]);
+    custom.linkedIcon = previewIcon[msp];
+
     custom:SetCallback("OnEnterPressed", 
       function(self, event, text) 
         Editor:SetMSP(self.MSP, text) 
         Editor:GeneratePE();
-        iconPreview:SetIcon()
+        self.linkedIcon:SetIcon();
       end);
       
-    local dropdown = AceGUI:Create("Dropdown");
-    dropdown:SetRelativeWidth(0.5);
-    dropdown.MSP = msp .. "-icon";
-    dropdown:SetCallback("OnEnter", showTooltip);
-    dropdown:SetCallback("OnLeave", hideTooltip);
+    local dropdown = makeDropdown(msp .. "-icon", 0.5, "IC");
     dropdown:SetLabel(L["Label " .. msp .. "-icon"]);
+    dropdown.linkedIcon = previewIcon[msp];
 
-    local myMenu = menu.IC;
-    local myOrder = menu.ICOrder;
+    dropdown:RunInitialize(custom);
 
-    if not menu.ICSorted
-    then sortingMenu = myMenu;
-         table.sort(myOrder, sortMenu)
-         menu.ICSorted = true;
-    end;
-
-    local initialValue = Editor:GetMSP(msp .. "-icon");
-    
-    if   myMenu[initialValue]
-    then dropdown:SetValue(initialValue);
-         dropdown:SetText(myMenu[initialValue]);
-         custom:SetText(Editor:GetMSP(msp .. "-icon-custom") or "");
-         custom:SetDisabled(true); 
-    else dropdown:SetValue("-1"); 
-         dropdown:SetText(myMenu["-1"]);
-         custom:SetDisabled(false); 
-         custom:SetText(initialValue);
-    end;
-
-    dropdown:SetList(myMenu, myOrder);
-
-    dropdown:SetCallback("OnValueChanged", 
+    dropdown:SetCallback("OnValueChanged",
       function(self, event, key)
-        Editor:SetMSP(self.MSP, key);
+        dropdown:SetValueFromKey(event, key);
         Editor:GeneratePE();
-        if key == "-1"
-        then custom:SetDisabled(false);
-             custom:SetFocus();
-             iconPreview:SetIcon(self.custom:GetText());
-        else custom:SetDisabled(true);
-             iconPreview:SetIcon();
-        end
       end);
 
-    self:AddChild(dropdown);
-    self:AddChild(custom);
-  
-    local titleLabel = makeLabel(msp .. "-title", 0.15);
-    self:AddChild(titleLabel);
+    self:AddChild(makeLabel(msp .. "-title", 0.15));
 
-    local title = AceGUI:Create("EditBox");
-    fixEditBox(title);
-    title:SetRelativeWidth(0.85);
-    title.MSP = msp .. "-title";
-    title:SetText(Editor:GetMSP(msp .. "-title"));
+
+    local title = makeEditBox(msp .. "-title", 0.85);
     title:SetCallback("OnEnterPressed", 
       function(self, event, text) 
         Editor:SetMSP(self.MSP, text); 
+        self:ApplyPlaceholder();
         Editor:GeneratePE();
+        self:ClearFocus();
       end);
+
+    title:SetPlaceholder(L["Placeholder " .. msp .. "-title"]);
+
     self:AddChild(title);
 
-    local textbox = AceGUI:Create("MultiLineEditBox");
-    textbox:SetLabel(L["Label " .. msp .. "-text"]);
-    textbox:SetNumLines(5);
-    textbox:SetFullWidth(true);
-    textbox.MSP = msp .. "-text";
-    textbox:SetCallback("OnEnter", showTooltip);
-    textbox:SetCallback("OnLeave", hideTooltip);
-    textbox:SetText( Editor:GetMSP(msp .. "-text") );
-    textbox:SetCallback("OnEnterPressed", 
+    self:AddChild(dropdown);
+    self:AddChild(custom);
+
+    local multiLine = makeMultiLine(msp .. "-text", 6);
+    multiLine:SetCallback("OnEnterPressed", 
       function(self, event, text) 
         Editor:SetMSP(self.MSP, text); 
         Editor:GeneratePE();
       end);
 
-    self:AddChild(textbox)
+    self:AddChild(multiLine)
+
   end;
+
   glancesGroup:SetFullWidth(true);
   glancesGroup:SetFullHeight(true);
   glancesGroup:SetLayout("Flow");
@@ -1433,17 +1338,24 @@ function Editor.Make:Appearance()
   panelFrame:SetLayout("Flow");
   panelFrame:SetFullWidth(true);
   panelFrame:AddChild(makeInstruct("Appearance"))
-  local eyes = makeColorfulEditBox("AE", 0.75, 0.15)
-  panelFrame:AddChild(eyes[1]);
-  panelFrame:AddChild(eyes[2]);
-  panelFrame:AddChild(eyes[3]);
-  local height  = makeEditBox("AH", 0.85, 0.15) 
-  panelFrame:AddChild(height[1]);
-  panelFrame:AddChild(height[2]);
-  local weight = makeEditBox("AW", 0.85, 0.15)
-  panelFrame:AddChild(weight[1]);
-  panelFrame:AddChild(weight[2]);
-  panelFrame:AddChild(makeMultiLine("DE", 12));
+
+  panelFrame:AddChild(makeLabel("AE", 0.15));      -- eyes
+  local eyesEditBox = makeEditBox("AE", 0.75);
+  eyesEditBox:SetPlaceholder(L["Placeholder AE"]);
+  local eyesColorPicker = makeColorPicker("AE");
+  eyesColorPicker:RunInitialize(eyesEditBox);
+  panelFrame:AddChild(eyesEditBox);
+  panelFrame:AddChild(eyesColorPicker);
+
+  panelFrame:AddChild(makeLabel("AH", 0.15));      -- height
+  local heightEditBox = makeEditBox("AH", 0.85);
+  heightEditBox:SetPlaceholder(L["Placeholder AH"]);
+  panelFrame:AddChild(heightEditBox);
+  panelFrame:AddChild(makeLabel("AW", 0.15));      -- weight
+  local weightEditBox = makeEditBox("AW", 0.85);
+  weightEditBox:SetPlaceholder(L["Placeholder AW"]);
+  panelFrame:AddChild(weightEditBox);
+  panelFrame:AddChild(makeMultiLine("DE", 18));    -- description
 
   return panelFrame;
 
@@ -1453,46 +1365,107 @@ function Editor.Make:Basics()
   local panelFrame = AceGUI:Create("SimpleGroup");
   panelFrame:SetLayout("Flow");
   panelFrame:SetFullWidth(true);
-  panelFrame:AddChild(makeInstruct("Basics") );
-  panelFrame:AddChild(makeDetachedIcon(64, 0.15));
-  panelFrame:AddChild(makeDetachedDropdown("PX", 0.15) ); 
-  local name = makeColorfulEditBox("NA", 0.65, 0.15) 
-  panelFrame:AddChild(name[1]);
-  panelFrame:AddChild(name[2]);
-  panelFrame:AddChild(name[3]);
-  panelFrame:AddChild(makeDetachedCustom("PX", 0.15))
-  local pronouns =  makeDropdown("PN", 0.25, 0, 0.25)
-  panelFrame:AddChild(pronouns[1]);
-  panelFrame:AddChild(pronouns[2]);
-  local race = makeEditBox("RA", 0.85, 0.15);
-  panelFrame:AddChild(race[1]);
-  panelFrame:AddChild(race[2]);
-  local class = makeEditBox("RC", 0.85, 0.15)
-  panelFrame:AddChild(class[1]);
-  panelFrame:AddChild(class[2]);
+  panelFrame:AddChild(makeInstruct("Basics"));
 
-  local detachedIcon =   makeDetachedIconDropdown(0.25, 0.25  )
-  panelFrame:AddChild(detachedIcon);
-  panelFrame:AddChild(detachedIcon);
+  local playerIcon = AceGUI:Create("IconNoHighlight");               -- icon
+  playerIcon.MSP = "IC";
+  playerIcon.tooltipMSP = "IC-icon";
+  playerIcon:SetCallback("OnEnter", showTooltip);
+  playerIcon:SetCallback("OnLeave", hideTooltip);
+
+  playerIcon:SetImageSize(64, 64);
+  playerIcon:SetRelativeWidth(0.20);
+
+  function playerIcon:SetIcon(useThisIcon)
+    local iconFile   = useThisIcon or Editor:GetMSP("IC");
+    local customIcon = Editor:GetMSP("IC-icon-custom");
+
+    if     iconFile == "-1" and customIcon ~= ""
+    then   self:SetImage("Interface\\ICONS\\" .. customIcon)
+    elseif iconFile ~= ""
+    then   self:SetImage("Interface\\ICONS\\" .. iconFile);
+    end;
+  end;
+
+  playerIcon:SetIcon();
+  panelFrame:AddChild(playerIcon);
+
+  local iconDropdown = makeDropdown("IC", 0.40);
+  local iconCustom = makeCustom("IC", 0.40);
+  iconDropdown:RunInitialize(iconCustom);
+  iconDropdown.linkedIcon = playerIcon;
+  iconCustom.linkedIcon = playerIcon;
+  panelFrame:AddChild(iconDropdown);
+  panelFrame:AddChild(iconCustom);
+
+  local nameHeader = AceGUI:Create("Heading");
+  nameHeader:SetText("Character Name");
+  nameHeader:SetFullWidth(true);
+
+  panelFrame:AddChild(nameHeader);
+
+  local honorificDropdown = makeDropdown("PX", 0.20);
+  local honorificCustom = makeCustom("PX", 0.20);
+  honorificDropdown:RunInitialize(honorificCustom);
+  panelFrame:AddChild(honorificDropdown);
+
+  honorificDropdown:SetLabel();
+  honorificCustom:SetLabel();
+
+  panelFrame:AddChild(makeSpacer(0.02));
+  local nameEditBox = makeEditBox("NA", 0.73);
+  local nameColorPicker = makeColorPicker("NA");
+  nameColorPicker:RunInitialize(nameEditBox);
+
+  panelFrame:AddChild(nameEditBox);
+  panelFrame:AddChild(nameColorPicker);
+
+  panelFrame:AddChild(honorificCustom);
+
+  panelFrame:AddChild(makeSpacer(0.02));
+  panelFrame:AddChild(makeLabel("RA", 0.10))
+  panelFrame:AddChild(makeEditBox("RA", 0.68));
+
+  local pronounDropdown = makeDropdown("PN", 0.20);
+  local pronounCustom = makeCustom("PN", 0.20);
+  pronounDropdown:RunInitialize(pronounCustom);
+  pronounDropdown:SetLabel();
+
+  panelFrame:AddChild(pronounDropdown);
+
+  panelFrame:AddChild(makeSpacer(0.02));
+  panelFrame:AddChild(makeLabel("RC", 0.10));
+  panelFrame:AddChild(makeEditBox("RC", 0.68));
+
+  panelFrame:AddChild(pronounCustom);
+  pronounCustom:SetLabel();
 
   return panelFrame;
 end;
 
 function Editor.Make:Bio()
   local panelFrame = AceGUI:Create("SimpleGroup");
+
   panelFrame:SetLayout("Flow");
   panelFrame:SetFullWidth(true);
   panelFrame:AddChild(makeInstruct("Bio"));
-  local age = makeEditBox("AG", 0.85, 0.15);
-  panelFrame:AddChild(age[1]);
-  panelFrame:AddChild(age[2]);
-  local birthPlace = makeEditBox("HB", 0.85, 0.15);
-  panelFrame:AddChild(birthPlace[1]);
-  panelFrame:AddChild(birthPlace[2]);
-  local home = makeEditBox("HH", 0.85, 0.15)
-  panelFrame:AddChild(home[1]);
-  panelFrame:AddChild(home[2]);
-  panelFrame:AddChild( makeMultiLine("HI", 12));
+  panelFrame:AddChild(makeLabel("AG", 0.15));
+
+  local ageEditBox = makeEditBox("AG", 0.85);
+  ageEditBox:SetPlaceholder(L["Placeholder AG"]);
+  panelFrame:AddChild(ageEditBox);
+
+  panelFrame:AddChild(makeLabel("HB", 0.15));
+  local birthplaceEditBox = makeEditBox("HB", 0.85);
+  birthplaceEditBox:SetPlaceholder(L["Placeholder HB"]);
+  panelFrame:AddChild(birthplaceEditBox);
+
+  panelFrame:AddChild(makeLabel("HH", 0.15));
+  local homeEditBox = makeEditBox("HH", 0.85);
+  homeEditBox:SetPlaceholder(L["Placeholder HH"]);
+  panelFrame:AddChild(homeEditBox);
+
+  panelFrame:AddChild(makeMultiLine("HI", 18));
 
   return panelFrame;
 end;
@@ -1502,18 +1475,26 @@ function Editor.Make:Social()
   panelFrame:SetLayout("Flow");
   panelFrame:SetFullWidth(true);
   panelFrame:AddChild(makeInstruct("Social"));
-  local nickname =               makeEditBox("NI", 0.85, 0.15)
-  panelFrame:AddChild(nickname[1])
-  panelFrame:AddChild(nickname[2]);
-  local title = makeEditBox("NT", 0.85, 0.15)
-  panelFrame:AddChild(title[1]);
-  panelFrame:AddChild(title[2]);
-  local house = makeEditBox("NH", 0.85, 0.15) 
-  panelFrame:AddChild(house[1]);
-  panelFrame:AddChild(house[2]);
-  local motto = makeEditBox("MO", 0.85, 0.15)
-  panelFrame:AddChild(motto[1]);
-  panelFrame:AddChild(motto[2]);
+
+  panelFrame:AddChild(makeLabel("NI", 0.15));    -- nickname
+  local nicknameEditBox = makeEditBox("NI", 0.85);
+  nicknameEditBox:SetPlaceholder(L["Placeholder NI"]);
+  panelFrame:AddChild(nicknameEditBox);
+
+  panelFrame:AddChild(makeLabel("NT", 0.15));    -- (long) title
+  local titleEditBox = makeEditBox("NT", 0.85);
+  titleEditBox:SetPlaceholder(L["Placeholder NT"]);
+  panelFrame:AddChild(titleEditBox);
+
+  panelFrame:AddChild(makeLabel("NH", 0.15));    -- house name
+  local houseEditBox = makeEditBox("NH", 0.85);
+  houseEditBox:SetPlaceholder(L["Placeholder NH"]);
+  panelFrame:AddChild(houseEditBox);
+
+  panelFrame:AddChild(makeLabel("MO", 0.15));    -- motto
+  local mottoEditBox = makeEditBox("MO", 0.85);
+  mottoEditBox:SetPlaceholder(L["Placeholder MO"]);
+  panelFrame:AddChild(mottoEditBox);
 
   return panelFrame;
 end;
@@ -1523,25 +1504,46 @@ function Editor.Make:Status()
   panelFrame:SetLayout("Flow");
   panelFrame:SetFullWidth(true);
   panelFrame:AddChild(makeInstruct("Status"));
-  local rpStatus = makeDropdown("FC", 0.25, 0.25)
-  panelFrame:AddChild(rpStatus[1]);
-  panelFrame:AddChild(rpStatus[2]);
-  local rpStyle  = makeDropdown("FR", 0.25, 0.25)
-  panelFrame:AddChild(rpStyle[1])
-  panelFrame:AddChild(rpStyle[2])
-  panelFrame:AddChild(makeMultiLine("CU", 12, 0.5))
-  panelFrame:AddChild(makeMultiLine("CO", 12, 0.5))
+
+  local left = AceGUI:Create("SimpleGroup");
+  left:SetRelativeWidth(0.49);
+  panelFrame:AddChild(left);
+
+  panelFrame:AddChild(makeSpacer(0.02));
+
+  local right = AceGUI:Create("SimpleGroup");
+  right:SetRelativeWidth(0.49);
+  panelFrame:AddChild(right);
+
+  local statusDropdown = makeDropdown("FC", 1) -- rpStatus
+  local statusCustom = makeCustom("FC", 1)
+  statusCustom:SetLabel();
+  statusDropdown:RunInitialize(statusCustom);
+
+  left:AddChild(statusDropdown);
+  left:AddChild(statusCustom);
+
+  local styleDropdown = makeDropdown("FR", 1) -- rpStyle
+  local styleCustom = makeCustom("FC", 1);
+  styleCustom:SetLabel();
+  styleDropdown:RunInitialize(styleCustom);
+
+  right:AddChild(styleDropdown);
+  right:AddChild(styleCustom);
+
+  left:AddChild(makeMultiLine("CU", 12, 1))
+  right:AddChild(makeMultiLine("CO", 12, 1))
   return panelFrame;
 end;
 
-Editor.TabOrder = { "Basics", "Appearance", "Glance", "Social", "Bio", "Status" };
+Editor.TabOrder = { "Basics", "Appearance", "Glances", "Social", "Bio", "Status" };
 Editor.TabList =
-{ { value = "Basics", text = L["Group Basics"], }
-  { value = "Appearance", text = L["Group Appearance"] },
-  { value = "Glance", text = L["Group Glance"] },
-  { value = "Social", text = L["Group Social"] },
-  { value = "Bio", text = L["Group Bio"] },
-  { value = "Status", text = L["Group Status" ] },
+{ { value = "Basics",     text = L["Group Basics"     ] },
+  { value = "Appearance", text = L["Group Appearance" ] },
+  { value = "Glances",     text = L["Group Glances"     ] },
+  { value = "Social",     text = L["Group Social"     ] },
+  { value = "Bio",        text = L["Group Bio"        ] },
+  { value = "Status",     text = L["Group Status"     ] },
 };
 
 Editor.TabGroup = AceGUI:Create("TabGroup");
@@ -1564,7 +1566,8 @@ function Editor.TabGroup:LoadTab(tab)
   self.scrollFrame = AceGUI:Create("ScrollFrame");
   self.scrollFrame:SetLayout("Flow");
   self.scrollContainer:AddChild(self.scrollFrame);
-  self.scrollFrame:AddChild(self.Editor.Make[tab](self.Editor));
+  local panelFrame = Editor.Make[tab](Editor);
+  self.scrollFrame:AddChild(panelFrame);
   self.Editor.currentGroup = tab;
 end;
 
@@ -1575,7 +1578,7 @@ Editor.TabGroup:SetCallback("OnGroupSelected",
   end);
 
 function Editor:ReloadTab()
-  self.TabGroup:LoadTab(self.currentGroup or self:TabOrder[1]);
+  self.TabGroup:LoadTab(self.currentGroup or self.TabOrder[1]);
   self:SetTitle(RP_Identity.addOnTitle .. " - " .. RP_Identity.db:GetCurrentProfile() );
 end;
 
