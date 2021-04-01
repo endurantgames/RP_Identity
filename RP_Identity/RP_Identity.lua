@@ -84,29 +84,57 @@ local function notify(...) print("[" .. RP_Identity.addOnTitle .. "]", ...) end;
 
 local col = {};
 function col.gray(text)   return LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(text) end;
+function col.gray2(text)  return GRAY_FONT_COLOR:WrapTextInColorCode(text) end;
 function col.orange(text) return LEGENDARY_ORANGE_COLOR:WrapTextInColorCode(text)    end;
 function col.white(text)  return WHITE_FONT_COLOR:WrapTextInColorCode(text) end;
+function col.yellow(text) return YELLOW_FONT_COLOR:WrapTextInColorCode(text) end;
 
-local ORANGE = LEGENDARY_ORANGE_COLOR:GenerateHexColor();
-local WHITE  = WHITE_FONT_COLOR:GenerateHexColor();
+local ORANGE    = LEGENDARY_ORANGE_COLOR:GenerateHexColor();
+local WHITE     = WHITE_FONT_COLOR:GenerateHexColor();
+local GRAY      = GRAY_FONT_COLOR:GenerateHexColor();
+local LIGHTGRAY = LIGHTGRAY_FONT_COLOR:GenerateHexColor();
+local YELLOW    = YELLOW_FONT_COLOR:GenerateHexColor();
 
+local colorIndex = { [YELLOW] = 1, [ORANGE] = 2, [WHITE] = 3, [LIGHTGRAY] = 4, [GRAY] = 5 }
 local forwardArrow = "|A:common-icon-forwardarrow:0|a";
-local sortingMenu
 
-local function sortMenu(a, b)
-  local colorA, textA = sortingMenu[a]:match("^|c(ff%x%x%x%x%x%x)(.+)|r$")
-  local colorB, textB = sortingMenu[b]:match("^|c(ff%x%x%x%x%x%x)(.+)|r$")
+local function sortMenu(menuID)
+  local menu = RP_Identity.menu;
+  if menu[menuID .. "Sorted"] then return end;
+  local sortingMenu = menu[menuID];
+  local order = menu[menuID .. "Order"];
 
-  if     colorA and not colorB then return true
-  elseif colorB and not colorA then return false
-  elseif not colorA and not colorB then return sortingMenu[a] < sortingMenu[b]
-  elseif colorA == colorB then return textA < textB
-  elseif colorA == ORANGE then return true
-  elseif colorB == ORANGE then return false
-  elseif colorA == WHITE then return true
-  elseif colorB == WHITE then return false
-  else return textA < textB
+  local function findColor(str) return str:match("^|c(%x%x%x%x%x%x%x%x)(.+)|r"); end;
+
+  local function func(a, b)
+    if a == "" and b ~= "" then return true end;
+    if b == "" and a ~= "" then return false end;
+
+    local menuA, menuB = sortingMenu[a], sortingMenu[b];
+
+    local colorA, textA = findColor(menuA)
+    local colorB, textB = findColor(menuB)
+
+    if not colorA and not colorB and menuA == menuB then return a < b end;
+    if not colorA and not color then return strtrim(menuA) < strtrim(menuB) end;
+    
+    if colorA and not colorB then return false; end;
+    if colorB and not colorA then return true; end;
+  
+    local indexA, indexB = colorIndex[colorA], colorIndex[colorB];
+  
+    if indexA ~= indexB then return indexA < indexB end;
+
+    if textA:match(":") and not textB:match(":") then return true end;
+    if textB:match(":") and not textA:match(":") then return false end;
+    if textA ~= textB then return strtrim(textA) < strtrim(textB) end;
+
+    if menuA ~= menuB then return strtrim(menuA) < strtrim(menuB) end;
+
+    return strtrim(a) < strtrim(b);
   end;
+  table.sort(order, func)
+  menu[menuID .. "Sorted"] = true;
 end;
 
 local myDataBroker = 
@@ -159,7 +187,7 @@ local myDefaults =
       HB                   = "",
       HI                   = "",
       HO                   = "",
-      IC                   = maskIconNoPath,
+      IC                   = "ClassIcon_" .. UnitClass("player"),
       MO                   = "",
       NA                   = UnitName("player"),
       NH                   = "",
@@ -594,6 +622,7 @@ end;
 
 table.insert(menu.PXOrder, "-1");
  
+RP_Identity.menu = menu;
 -- primarily adapted from totalRP3:
 local ICONS = "Interface\\ICONS\\";
 local iconDB = 
@@ -694,18 +723,18 @@ local iconDB =
   }, -- race
   
 class =
-  { ["WARRIOR"     ] = "ClassIcon_Warrior",
-    ["PALADIN"     ] = "ClassIcon_Paladin",
-    ["HUNTER"      ] = "ClassIcon_Hunter",
-    ["ROGUE"       ] = "ClassIcon_Rogue",
-    ["PRIEST"      ] = "ClassIcon_Priest",
-    ["DEATHKNIGHT" ] = "ClassIcon_DeathKnight",
-    ["SHAMAN"      ] = "ClassIcon_Shaman",
-    ["MAGE"        ] = "ClassIcon_Mage",
-    ["WARLOCK"     ] = "ClassIcon_Warlock",
-    ["MONK"        ] = "ClassIcon_Monk",
-    ["DRUID"       ] = "ClassIcon_Druid",
-    ["DEMONHUNTER" ] = "ClassIcon_DemonHunter",
+  { ["WARRIOR"     ] = "ClassIcon_WARRIOR",
+    ["PALADIN"     ] = "ClassIcon_PALADIN",
+    ["HUNTER"      ] = "ClassIcon_HUNTER",
+    ["ROGUE"       ] = "ClassIcon_ROGUE",
+    ["PRIEST"      ] = "ClassIcon_PRIEST",
+    ["DEATHKNIGHT" ] = "ClassIcon_DEATHKNIGHT",
+    ["SHAMAN"      ] = "ClassIcon_SHAMAN",
+    ["MAGE"        ] = "ClassIcon_MAGE",
+    ["WARLOCK"     ] = "ClassIcon_WARLOCK",
+    ["MONK"        ] = "ClassIcon_MONK",
+    ["DRUID"       ] = "ClassIcon_DRUID",
+    ["DEMONHUNTER" ] = "ClassIcon_DEMONHUNTER",
   }, -- class
 
 popularIcons = 
@@ -740,61 +769,54 @@ popularIcons =
   }, -- popularIcons
 }; -- iconDB
 
+local function addIconToMenu(icon, label, color)
+  label = color and col[color](label) or label;
+  if not menu.IC[icon]                 then menu.IC[icon] = label;      end;
+  if not tContains(menu.ICOrder, icon) then tinsert(menu.ICOrder, icon) end;
+end;
+
 local localizedRace,  playerRace  = UnitRace("player");
 local raceIcons = iconDB.race[playerRace];
-menu.IC[raceIcons[2]] = localizedRace .. L["Gender (Male)"];
-menu.IC[raceIcons[3]] = localizedRace .. L["Gender (Female)"];
-menu.IC[raceIcons[1]] = localizedRace .. L["Gender (Neutral)"];
-
-table.insert(menu.ICOrder, raceIcons[1]);
-
-if raceIcons[1] ~= raceIcons[3] then table.insert(menu.ICOrder, raceIcons[3]); end;
-if raceIcons[1] ~= raceIcons[2] and raceIcons[2] ~= raceIcons[3] then table.insert(menu.ICOrder, raceIcons[2]); end;
+addIconToMenu(raceIcons[1], localizedRace .. L["Gender (Neutral)"]);
+addIconToMenu(raceIcons[3], localizedRace .. L["Gender (Female)"]);
+addIconToMenu(raceIcons[2], localizedRace .. L["Gender (Male)"]);
 
 local localizedClass, playerClass = UnitClass("player");
 local classIcon = iconDB.class[playerClass];
-menu.IC[classIcon] = localizedClass;
-table.insert(menu.ICOrder, classIcon);
+addIconToMenu(classIcon, localizedClass);
+
+addIconToMenu(" ", col.yellow("Popular Icons:"), "white");
 
 for iconFile, iconDesc in pairs(iconDB.popularIcons)
-do  menu.IC[iconFile] = col.white(iconDesc);
-    table.insert(menu.ICOrder, iconFile)
+do  addIconToMenu(iconFile, iconDesc, "white");
 end;
 
---[===[
+addIconToMenu("  ", col.yellow("Other Classes:"), "gray");
+
 for className, classIcon in pairs(iconDB.class)
-do  if className ~= playerClass
-    then local localizedClassMale   = LOCALIZED_CLASS_NAMES_MALE[className];
-         local localizedClassFemale = LOCALIZED_CLASS_NAMES_FEMALE[className];
-         if localizedClassMale ~= localizedClassFemale
-         then menu.IC[classIcon] = col.gray(localizedClassFemale);
-              table.insert(menu.ICOrder, classIcon);
+do  
+    local localizedClassMale   = LOCALIZED_CLASS_NAMES_MALE[className];
+    local localizedClassFemale = LOCALIZED_CLASS_NAMES_FEMALE[className];
 
-              menu.IC[classIcon:lower()] = col.gray(localizedClassMale);
-              table.insert(menu.ICOrder, classIcon:lower());
-
-         else menu.IC[classIcon] = col.gray(localizedClassFemale);
-              table.insert(menu.ICOrder, classIcon);
-         end;
+    if    localizedClassMale ~= localizedClassFemale
+    then  addIconToMenu(classIcon, localizedClassFemale, "gray");
+          addIconToMenu(classIcon:lower(), localizedClassMale, "gray");
+    else addIconToMenu(classIcon, localizedClassFemale, "gray");
     end;
 end;
 
---     
+addIconToMenu("   ", col.yellow("Other Races:"), "gray2");
+
 for raceID = 1, NUM_RACES
 do  local r = C_CreatureInfo.GetRaceInfo(raceID);
-    if r and iconDB.race[r.clientFileString] and r.clientFileString ~= playerRace
+    if r and iconDB.race[r.clientFileString]
     then local raceIcons = iconDB.race[r.clientFileString] 
-         menu.IC[raceIcons[1]] = col.gray(r.raceName .. L["Gender (Neutral)"]);
-         menu.IC[raceIcons[2]] = col.gray(r.raceName .. L["Gender (Male)"]);
-         menu.IC[raceIcons[3]] = col.gray(r.raceName .. L["Gender (Female)"]);
-         table.insert(menu.ICOrder, raceIcons[1]);
-         table.insert(menu.ICOrder, raceIcons[2]);
-         table.insert(menu.ICOrder, raceIcons[3]);
+         addIconToMenu(raceIcons[1], r.raceName .. L["Gender (Neutral)"], "gray2");
+         addIconToMenu(raceIcons[3], r.raceName .. L["Gender (Female)" ], "gray2");
+         addIconToMenu(raceIcons[2], r.raceName .. L["Gender (Male)"   ], "gray2");
     end;
 end;
 
---]===]
---
 -- editor
 --
 --
@@ -1016,6 +1038,8 @@ local function makeDropdown(msp, width, menuID)
   dropdown:SetLabel(L["Label " .. msp]);
 
   local function Dropdown_setValueFromKey(self, event, key, not_interactive)
+    key = strtrim(key);
+    print(key:len())
     if     self.hasCustom and (key == "-1")
     then   self.custom:SetDisabled(false);
            if not not_interactive then self.custom:SetFocus() end;
@@ -1050,11 +1074,7 @@ local function makeDropdown(msp, width, menuID)
     self.menu = menu[menuID];
     self.order = menu[menuID .. "Order"];
 
-    if not menu[menuID .. "Sorted"]
-    then sortingMenu = self.menu;
-         table.sort(self.order, sortMenu);
-         menu[menuID .. "Sorted"] = true;
-    end;
+    sortMenu(menuID);
 
     self:SetList(self.menu, self.order);
 
@@ -1382,6 +1402,7 @@ function Editor.Make:Basics()
     then   self:SetImage("Interface\\ICONS\\" .. customIcon)
     elseif iconFile ~= ""
     then   self:SetImage("Interface\\ICONS\\" .. iconFile);
+    else   self:SetImage();
     end;
   end;
 
