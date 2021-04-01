@@ -405,7 +405,7 @@ end;
 
 _G[addOnName] = RP_Identity;
 
-function RP_Identity:OnLoad() 
+function RP_Identity:OnEnable() 
    self.realm = GetNormalizedRealmName();
    me = UnitName("player") .. "-" .. realm;
    self.Editor.TabGroup:SelectTab(groupOrder[1]);
